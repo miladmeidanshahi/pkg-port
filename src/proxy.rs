@@ -203,14 +203,14 @@ impl Proxy {
         })
     }
 
-    pub fn set_package_dir(&self, dir: PathBuf) -> io::Result<()> {
-        if !dir.is_dir() {
+    pub fn set_package_dir(&self, dir: Option<PathBuf>) -> io::Result<()> {
+        if dir.as_ref().is_some_and(|dir| !dir.is_dir()) {
             return Err(invalid("Choose an existing package folder"));
         }
         *self
             .package_dir
             .lock()
-            .map_err(|_| invalid("Proxy stopping"))? = Some(dir);
+            .map_err(|_| invalid("Proxy stopping"))? = dir;
         Ok(())
     }
 
@@ -854,6 +854,27 @@ mod tests {
         proxy.stop();
         peer.set_read_timeout(Some(Duration::from_secs(1))).unwrap();
         assert_eq!(peer.read(&mut [0u8; 1]).unwrap(), 0);
+    }
+
+    #[test]
+    fn package_folder_can_be_cleared_while_proxy_exists() {
+        let proxy = Proxy {
+            stop: Arc::new(AtomicBool::new(false)),
+            thread: None,
+            address: "127.0.0.1:8080".parse().unwrap(),
+            sockets: Arc::new(Mutex::new(HashMap::new())),
+            events: mpsc::sync_channel(1).1,
+            transfers: Transfers::default(),
+            package_dir: Arc::new(Mutex::new(None)),
+        };
+        let folder = std::env::temp_dir();
+        proxy.set_package_dir(Some(folder.clone())).unwrap();
+        assert!(proxy
+            .set_package_dir(Some(std::env::current_exe().unwrap()))
+            .is_err());
+        assert_eq!(*proxy.package_dir.lock().unwrap(), Some(folder));
+        proxy.set_package_dir(None).unwrap();
+        assert_eq!(*proxy.package_dir.lock().unwrap(), None);
     }
 
     #[test]

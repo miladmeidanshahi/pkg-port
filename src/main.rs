@@ -874,7 +874,7 @@ impl App {
                 ProxyTransition::Starting(receiver) => match receiver.try_recv() {
                     Ok(Ok(proxy)) => {
                         if let Some(path) = &self.package_dir {
-                            if let Err(error) = proxy.set_package_dir(path.clone()) {
+                            if let Err(error) = proxy.set_package_dir(Some(path.clone())) {
                                 self.proxy_error = Some(error.to_string());
                             }
                         }
@@ -1919,6 +1919,21 @@ mod tests {
             });
             window.render_frame(cx);
             assert!(window.find("copy-upload-url").visible());
+            app.update(cx, |app, cx| {
+                app.current_step = 2;
+                app.language = super::i18n::Language::Persian;
+                cx.notify();
+            });
+            window.render_frame(cx);
+            let clear = window.find("clear-folder");
+            assert!(clear.visible());
+            assert!(clear.bounds().right() <= px(420.));
+            window.click("clear-folder", cx);
+            let app = app.read(cx);
+            assert!(app.package_dir.is_none());
+            assert!(app.folder_check.is_none());
+            assert!(app.folder_inspection.is_none());
+            assert!(!app.folder_ready());
         })
         .expect("inspect narrow Persian layout");
     }

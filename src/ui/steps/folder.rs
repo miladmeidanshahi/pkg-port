@@ -23,7 +23,7 @@ impl App {
                 if let Some(path) = paths.into_iter().next() {
                     let _ = view.update(cx, |app, cx| {
                         if let Some(proxy) = &app.proxy {
-                            if let Err(error) = proxy.set_package_dir(path.clone()) {
+                            if let Err(error) = proxy.set_package_dir(Some(path.clone())) {
                                 app.message = error.to_string();
                                 cx.notify();
                                 return;
@@ -51,6 +51,23 @@ impl App {
             }
         })
         .detach();
+    }
+
+    pub(crate) fn clear_folder(&mut self, cx: &mut Context<Self>) {
+        if let Some(proxy) = &self.proxy {
+            if let Err(error) = proxy.set_package_dir(None) {
+                self.message = error.to_string();
+                cx.notify();
+                return;
+            }
+        }
+        self.folder_check = None;
+        self.folder_inspection = None;
+        self.package_dir = None;
+        self.message.clear();
+        self.copy_feedback = None;
+        self.persist_settings(cx);
+        cx.notify();
     }
 
     pub(crate) fn folder_view(&self, cx: &mut Context<Self>, narrow: bool) -> AnyElement {
@@ -242,7 +259,18 @@ impl App {
                                     .text_color(cx.theme().muted_foreground)
                                     .child(folder_summary),
                             ),
-                    ),
+                    )
+                    .when(self.package_dir.is_some(), |row| {
+                        row.child(
+                            Button::new("clear-folder")
+                                .outline()
+                                .icon(IconName::CircleX)
+                                .tooltip(language.text("app.clear_selected_folder"))
+                                .accessibility_label(language.text("app.clear_selected_folder"))
+                                .flex_shrink_0()
+                                .on_click(cx.listener(|app, _, _, cx| app.clear_folder(cx))),
+                        )
+                    }),
             )
             .when_some(path, |view, path| {
                 let copied_path = path.clone();
@@ -456,6 +484,7 @@ impl App {
                     .child(
                         div()
                             .w_full()
+                            .min_w_0()
                             .whitespace_normal()
                             .text_color(cx.theme().muted_foreground)
                             .child(
