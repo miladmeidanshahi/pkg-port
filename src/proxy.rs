@@ -23,6 +23,7 @@ const COPY_CHUNK: usize = 64 * 1024;
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct TransferState {
     pub active: Vec<ActiveTransfer>,
+    pub last_url: Option<String>,
     pub files: HashMap<String, FileTransfer>,
     pub bytes: u64,
 }
@@ -71,6 +72,7 @@ impl Transfers {
     fn begin(&self, peer: SocketAddr, url: &str, file: &str, size: u64, total: u64) -> u64 {
         let id = self.next_id.fetch_add(1, Ordering::Relaxed);
         if let Ok(mut state) = self.state.lock() {
+            state.last_url = Some(url.to_owned());
             let entry = state.files.entry(file.to_owned()).or_default();
             entry.size = size;
             // A fresh request retries an interrupted part.
@@ -866,6 +868,7 @@ mod tests {
         transfers.end(id, "game_0.pkg", true);
         let snapshot = transfers.snapshot();
         assert!(snapshot.active.is_empty());
+        assert_eq!(snapshot.last_url.as_deref(), Some(url));
         assert!(snapshot.files["game_0.pkg"].interrupted);
         assert!(!snapshot.files["game_0.pkg"].complete);
 

@@ -1,10 +1,12 @@
+![PKGPort app showcase](assets/showcase-en.png)
+
 # PKGPort
 
 [فارسی](README.fa.md)
 
 **Give your local PKG files a route to your console.**
 
-PKGPort is a desktop app that runs a local proxy, recognizes PlayStation package requests, and serves matching `.pkg` files from a folder on your computer. Its guided interface shows the detected game, checks package parts, and tracks what the console has received.
+PKGPort is a desktop app for ultra-fast local PlayStation package transfers. It runs a local proxy, recognizes package requests, and streams matching `.pkg` files straight from a folder on your computer. Its guided interface shows the detected game, checks package parts, and tracks transfer progress.
 
 **Rust + GPUI Kit · Linux, Windows, macOS · English and Persian**
 
@@ -17,14 +19,14 @@ PKGPort is a desktop app that runs a local proxy, recognizes PlayStation package
 
 Each successful push publishes a prerelease with all four builds. Pick the newest entry on the [Releases page](https://github.com/miladmeidanshahi/pkg-port/releases), then download the file for your system.
 
-[![Windows](https://img.shields.io/badge/Windows-.exe-0078D6?logo=windows&logoColor=white)](https://github.com/miladmeidanshahi/pkg-port/releases)
+[![Windows](https://img.shields.io/badge/Windows-Setup%20.exe-0078D6?logo=windows&logoColor=white)](https://github.com/miladmeidanshahi/pkg-port/releases)
 [![Linux](https://img.shields.io/badge/Linux-.deb-FCC624?logo=linux&logoColor=black)](https://github.com/miladmeidanshahi/pkg-port/releases)
 [![macOS Apple Silicon](https://img.shields.io/badge/macOS-Apple%20Silicon%20.dmg-000000?logo=apple&logoColor=white)](https://github.com/miladmeidanshahi/pkg-port/releases)
 [![macOS Intel](https://img.shields.io/badge/macOS-Intel%20.dmg-000000?logo=apple&logoColor=white)](https://github.com/miladmeidanshahi/pkg-port/releases)
 
 | Platform | Release file |
 | --- | --- |
-| Windows x86_64 | `pkgport-<version>-windows-x86_64.exe` |
+| Windows x86_64 | `pkgport-<version>-windows-x86_64-setup.exe` |
 | Linux x86_64 | `pkgport-<version>-linux-x86_64.deb` |
 | macOS Apple Silicon | `pkgport-<version>-macos-aarch64.dmg` |
 | macOS Intel | `pkgport-<version>-macos-x86_64.dmg` |
@@ -126,13 +128,7 @@ cargo build --locked --release
 
 The binary is `target/release/pkgport` on Linux and macOS, or `target/release/pkgport.exe` on Windows. Every push starts a GitHub Actions build that tests and packages all four platforms. You can also start a build manually from the repository’s **Actions** page.
 
-On Linux, install the desktop launcher and icon after building:
-
-```sh
-./scripts/install-desktop.sh
-```
-
-The installer copies the binary to `~/.local/bin/pkgport`. Rebuild and run it again after source changes if you launch PKGPort from the app menu.
+On Linux, install the `.deb` package from the Releases page to add the app menu launcher and icon. A locally built binary can be run directly from `target/release/pkgport`.
 
 <details>
 <summary><strong>Linux build dependencies</strong></summary>

@@ -23,6 +23,7 @@ assets::icon_assets!(
 impl AssetSource for AppAssets {
     fn load(&self, path: &str) -> Result<Option<Cow<'static, [u8]>>> {
         match path {
+            "icon.svg" => Ok(Some(Cow::Borrowed(include_bytes!("../../assets/icon.svg")))),
             "flags/gb.svg" => Ok(Some(Cow::Borrowed(include_bytes!(
                 "../../assets/flags/gb.svg"
             )))),
@@ -40,7 +41,7 @@ impl AssetSource for AppAssets {
         let mut paths = assets::Assets.list(path)?;
         paths.extend(ExtraIcons.list(path)?);
         paths.extend(
-            ["flags/gb.svg", "flags/ir.svg"]
+            ["icon.svg", "flags/gb.svg", "flags/ir.svg"]
                 .into_iter()
                 .filter(|key| key.starts_with(path))
                 .map(SharedString::from),

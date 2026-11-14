@@ -24,8 +24,8 @@ jobs:
             suffix: linux-x86_64.deb
             binary: target/release/pkgport
           - runner: windows-2022
-            artifact: pkgport-windows-x86_64
-            suffix: windows-x86_64.exe
+            artifact: pkgport-windows-x86_64-setup
+            suffix: windows-x86_64-setup.exe
             binary: target/release/pkgport.exe
           - runner: macos-15
             artifact: pkgport-macos-aarch64
@@ -65,6 +65,7 @@ jobs:
       - name: Build release executable
         run: cargo build --locked --release
       - name: Package executable
+        if: runner.os != 'Windows'
         shell: bash
         env:
           VERSION: ${{ steps.version.outputs.version }}
@@ -74,9 +75,7 @@ jobs:
         run: |
           artifact="pkgport-$VERSION-$SUFFIX"
           mkdir -p dist
-          if [[ "$RUNNER_OS" == "Windows" ]]; then
-            cp "$BINARY" "dist/$artifact"
-          elif [[ "$RUNNER_OS" == "Linux" ]]; then
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
             root="dist/pkgport-deb"
             install -Dm755 "$BINARY" "$root/usr/bin/pkgport"
             install -Dm644 assets/pkgport.desktop "$root/usr/share/applications/pkgport.desktop"
@@ -102,6 +101,16 @@ jobs:
             hdiutil create -volname "PKGPort ($ARCH)" -srcfolder dist/PKGPort.app \
               -ov -format UDZO "dist/$artifact"
           fi
+      - name: Build Windows setup installer
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          $iscc = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'
+          if (!(Test-Path $iscc)) { throw "Inno Setup compiler not found at $iscc" }
+          & $iscc "/DAppVersion=$env:VERSION" "/O$env:GITHUB_WORKSPACE\dist" "installer\windows.iss"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Verify package contents
         shell: bash
         env:
@@ -130,6 +139,29 @@ jobs:
             /usr/libexec/PlistBuddy -c 'Print :CFBundleIconFile' \
               "$mount/PKGPort.app/Contents/Info.plist" | grep -qx 'PKGPort.icns'
           fi
+      - name: Verify Windows setup and upgrade
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          $installer = Join-Path $env:GITHUB_WORKSPACE "dist\pkgport-$env:VERSION-windows-x86_64-setup.exe"
+          $installDir = Join-Path $env:RUNNER_TEMP 'pkgport-install-test'
+          $settingsDir = Join-Path $env:APPDATA 'ps-rusty-downloader'
+          $settingsFile = Join-Path $settingsDir 'settings.json'
+          New-Item -ItemType Directory -Force -Path $settingsDir | Out-Null
+          Set-Content -Path $settingsFile -Value '{"installTest":true}' -NoNewline
+          $arguments = @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', "/DIR=$installDir")
+          $process = Start-Process -FilePath $installer -ArgumentList $arguments -Wait -PassThru
+          if ($process.ExitCode -ne 0) { throw "Initial setup failed with exit code $($process.ExitCode)" }
+          $installedExe = Join-Path $installDir 'pkgport.exe'
+          if (!(Test-Path $installedExe)) { throw 'Installed executable is missing' }
+          if (!(Test-Path (Join-Path $installDir 'unins000.exe'))) { throw 'Uninstaller is missing' }
+          Set-Content -Path $installedExe -Value 'stale-version-marker' -NoNewline
+          $process = Start-Process -FilePath $installer -ArgumentList $arguments -Wait -PassThru
+          if ($process.ExitCode -ne 0) { throw "Upgrade setup failed with exit code $($process.ExitCode)" }
+          if ((Get-FileHash $installedExe).Hash -ne (Get-FileHash (Join-Path $env:GITHUB_WORKSPACE 'target\release\pkgport.exe')).Hash) { throw 'Upgrade did not replace the stale executable' }
+          if ((Get-Content -Raw $settingsFile) -ne '{"installTest":true}') { throw 'Upgrade changed the existing app settings' }
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
@@ -170,7 +202,7 @@ jobs:
 
             | Platform / سیستم‌عامل | Download |
             | --- | --- |
-            | Windows x86_64 | [`.exe`](https://github.com/${{ github.repository }}/releases/download/build-${{ github.sha }}/pkgport-${{ needs.build.outputs.version }}-windows-x86_64.exe) |
+            | Windows x86_64 | [Setup `.exe`](https://github.com/${{ github.repository }}/releases/download/build-${{ github.sha }}/pkgport-${{ needs.build.outputs.version }}-windows-x86_64-setup.exe) |
             | Linux x86_64 | [`.deb`](https://github.com/${{ github.repository }}/releases/download/build-${{ github.sha }}/pkgport-${{ needs.build.outputs.version }}-linux-x86_64.deb) |
             | macOS Apple Silicon | [`.dmg`](https://github.com/${{ github.repository }}/releases/download/build-${{ github.sha }}/pkgport-${{ needs.build.outputs.version }}-macos-aarch64.dmg) |
             | macOS Intel | [`.dmg`](https://github.com/${{ github.repository }}/releases/download/build-${{ github.sha }}/pkgport-${{ needs.build.outputs.version }}-macos-x86_64.dmg) |

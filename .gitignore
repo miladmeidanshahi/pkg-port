@@ -4,6 +4,7 @@
 # Local development settings and agent state
 /AGENTS.md
 /CLAUDE.md
+/.claude/
 /.claude-flow/
 /.swarm/
 /graphify-out/

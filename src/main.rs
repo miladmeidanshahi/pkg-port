@@ -523,6 +523,7 @@ impl App {
         self.show_game_urls = true;
         self.transfers = proxy::TransferState {
             bytes: 2_500_000_000,
+            last_url: Some(self.game_urls[1].clone()),
             files: HashMap::from([
                 (
                     first,
@@ -1049,8 +1050,13 @@ impl App {
                 .transfers
                 .active
                 .last()
-                .map(|active| active.url.clone());
-            let next_url = snapshot.active.last().map(|active| active.url.clone());
+                .map(|active| active.url.clone())
+                .or_else(|| self.transfers.last_url.clone());
+            let next_url = snapshot
+                .active
+                .last()
+                .map(|active| active.url.clone())
+                .or_else(|| snapshot.last_url.clone());
             if previous_url != next_url {
                 self.copy_feedback = self.copy_feedback.filter(|key| *key != "app.url_copied");
             }
@@ -1451,12 +1457,7 @@ impl Render for App {
                                 .flex()
                                 .items_center()
                                 .justify_center()
-                                .rounded_md()
-                                .bg(cx.theme().group_box)
-                                .child(
-                                    Icon::new(assets::IconName::Download)
-                                        .text_color(cx.theme().primary),
-                                ),
+                                .child(img("icon.svg").w_full().h_full()),
                         )
                         .child(div().id("app-brand-name").test_support().child("PKGPort"))
                         .child(
@@ -1616,6 +1617,7 @@ mod tests {
             app.part_discovery_result = Some(Ok(1));
             app.transfers = super::proxy::TransferState {
                 bytes: 250,
+                last_url: Some(TEST_GAME_URL.into()),
                 files: HashMap::from([(
                     first_file.clone(),
                     super::proxy::FileTransfer {
@@ -1890,13 +1892,33 @@ mod tests {
                     "narrow step {step}: {button} ends off-window"
                 );
             }
+            app.update(cx, |app, cx| {
+                app.transfers.active[0].file = format!("{}.pkg", "long-name".repeat(20));
+                cx.notify();
+            });
+            window.render_frame(cx);
+            let name = window.find(("upload-file-name", 0usize)).bounds();
+            let size = window.find(("upload-file-size", 0usize)).bounds();
+            assert!(size.top() >= name.top() && size.bottom() <= name.bottom());
+            app.update(cx, |app, cx| {
+                app.language = super::i18n::Language::English;
+                cx.notify();
+            });
+            window.render_frame(cx);
+            let name = window.find(("upload-file-name", 0usize)).bounds();
+            let size = window.find(("upload-file-size", 0usize)).bounds();
+            assert!(size.top() >= name.top() && size.bottom() <= name.bottom());
             window.click("copy-upload-url", cx);
             assert_eq!(app.read(cx).copy_feedback, Some("app.url_copied"));
             app.update(cx, |app, cx| {
                 app.copy_feedback_until = Some(Instant::now() - Duration::from_secs(1));
                 app.poll(cx);
                 assert_eq!(app.copy_feedback, None);
+                app.transfers.active.clear();
+                cx.notify();
             });
+            window.render_frame(cx);
+            assert!(window.find("copy-upload-url").visible());
         })
         .expect("inspect narrow Persian layout");
     }
@@ -1981,6 +2003,7 @@ mod tests {
     #[test]
     fn app_assets_include_color_flags_and_default_icons() {
         for path in [
+            "icon.svg",
             "flags/gb.svg",
             "flags/ir.svg",
             "icons/inbox.svg",

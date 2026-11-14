@@ -99,7 +99,9 @@ impl App {
         } else {
             0.0
         };
-        let active_url = active.map(|transfer| transfer.url.clone());
+        let active_url = active
+            .map(|transfer| transfer.url.clone())
+            .or_else(|| self.transfers.last_url.clone());
         let completed = parts
             .iter()
             .filter(|(name, size)| self.transfer_done(name, *size))
@@ -399,7 +401,7 @@ impl App {
                     .child(
                         div()
                             .flex()
-                            .flex_wrap()
+                            .min_w_0()
                             .items_baseline()
                             .justify_between()
                             .gap_2()
@@ -408,6 +410,9 @@ impl App {
                                 div()
                                     .id(("upload-file-name", position))
                                     .test_support()
+                                    .flex_1()
+                                    .min_w_0()
+                                    .truncate()
                                     .text_sm()
                                     .font_semibold()
                                     .child(name.clone()),
@@ -416,6 +421,8 @@ impl App {
                                 div()
                                     .id(("upload-file-size", position))
                                     .test_support()
+                                    .flex_shrink_0()
+                                    .whitespace_nowrap()
                                     .text_xs()
                                     .text_color(cx.theme().muted_foreground)
                                     .child(format!(

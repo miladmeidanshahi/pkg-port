@@ -1,6 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
-  <rect width="128" height="128" rx="28" fill="#241512"/>
-  <rect x="56" y="24" width="16" height="36" rx="7" fill="#FF6B5F"/>
-  <path d="M38 58 h52 L64 88 Z" fill="#FF6B5F"/>
-  <rect x="36" y="96" width="56" height="10" rx="5" fill="#C9BFBC"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" role="img" aria-labelledby="title">
+  <title id="title">PKGPort speed icon</title>
+  <style>svg:hover .package { fill: #FF6B5F; }</style>
+  <rect width="32" height="32" fill="#111113"/>
+  <g transform="translate(2 2) scale(.875)">
+    <path fill="#FF6B5F" d="M2 12H9L8 14H1Z M4 18H9L8 20H3Z"/>
+    <path class="package" fill="#EA5145" fill-rule="evenodd" transform="translate(6.5 2) scale(.875)"
+      d="M4 9 8 4H24L28 9V26L26 28H6L4 26Z M14.5 4H17.5V9H14.5Z M4 9H28V11H4Z M10 17H13V15H19V17H22V23H10Z"/>
+  </g>
 </svg>

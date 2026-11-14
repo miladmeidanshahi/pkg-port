@@ -1,12 +1,14 @@
 <div dir="rtl" align="right">
 
+![نمای برنامهٔ PKGPort](assets/showcase-fa.png)
+
 # راهنمای PKGPort
 
 [English](README.md)
 
 **فایل‌های PKG را از رایانه‌تان به کنسول برسانید.**
 
-با PKGPort، کنسول فایل‌های بازی را از پوشه‌ی محلی رایانه می‌گیرد. برنامه درخواست‌های بسته‌ی پلی‌استیشن را از راه پراکسی تشخیص می‌دهد و فایل `.pkg` هم‌نام را می‌فرستد. در رابط برنامه هم می‌بینید چه بازی‌ای شناسایی شده، کدام بخش‌های بسته آماده‌اند و انتقال چطور پیش می‌رود.
+PKGPort برای انتقال فوق‌سریع فایل‌های بازی در شبکه‌ی محلی ساخته شده است. کنسول فایل‌ها را مستقیم از پوشه‌ی رایانه می‌گیرد؛ برنامه هم درخواست بسته‌ی پلی‌استیشن را تشخیص می‌دهد و فایل `.pkg` هم‌نام را می‌فرستد. در رابط برنامه می‌توانید بازی شناسایی‌شده، بخش‌های آماده و روند انتقال را ببینید.
 
 **فناوری‌ها: Rust و GPUI Kit · سیستم‌عامل‌ها: لینوکس، ویندوز و macOS · زبان‌ها: فارسی و انگلیسی**
 
@@ -17,14 +19,14 @@
 [![ساخت‌ها](https://img.shields.io/badge/builds-GitHub%20Actions-blue?logo=githubactions)](https://github.com/miladmeidanshahi/pkg-port/actions)
 [![دریافت‌ها](https://img.shields.io/github/downloads/miladmeidanshahi/pkg-port/total?logo=github&label=دریافت‌ها)](https://github.com/miladmeidanshahi/pkg-port/releases)
 
-[![ویندوز](https://img.shields.io/badge/Windows-.exe-0078D6?logo=windows&logoColor=white)](https://github.com/miladmeidanshahi/pkg-port/releases)
+[![ویندوز](https://img.shields.io/badge/Windows-Setup%20.exe-0078D6?logo=windows&logoColor=white)](https://github.com/miladmeidanshahi/pkg-port/releases)
 [![لینوکس](https://img.shields.io/badge/Linux-.deb-FCC624?logo=linux&logoColor=black)](https://github.com/miladmeidanshahi/pkg-port/releases)
 [![مک‌های Apple Silicon](https://img.shields.io/badge/macOS-Apple%20Silicon%20.dmg-000000?logo=apple&logoColor=white)](https://github.com/miladmeidanshahi/pkg-port/releases)
 [![مک‌های Intel](https://img.shields.io/badge/macOS-Intel%20.dmg-000000?logo=apple&logoColor=white)](https://github.com/miladmeidanshahi/pkg-port/releases)
 
 | سیستم‌عامل | نام فایل در صفحه‌ی انتشار |
 | --- | --- |
-| ویندوز x86_64 | `pkgport-<version>-windows-x86_64.exe` |
+| ویندوز x86_64 | `pkgport-<version>-windows-x86_64-setup.exe` |
 | لینوکس x86_64 | `pkgport-<version>-linux-x86_64.deb` |
 | مک با Apple Silicon | `pkgport-<version>-macos-aarch64.dmg` |
 | مک با پردازنده‌ی Intel | `pkgport-<version>-macos-x86_64.dmg` |
@@ -130,13 +132,7 @@ cargo build --locked --release
 
 فایل اجرایی در لینوکس و macOS در `target/release/pkgport` و در ویندوز در `target/release/pkgport.exe` ساخته می‌شود. با هر push، GitHub Actions پروژه را آزمایش و برای هر چهار پلتفرم بسته‌بندی می‌کند. می‌توانید ساخت را دستی هم از صفحه‌ی **Actions** مخزن شروع کنید.
 
-در لینوکس، پس از ساخت برنامه این دستور را بزنید تا راه‌انداز و آیکن نصب شوند:
-
-```sh
-./scripts/install-desktop.sh
-```
-
-نصاب، فایل اجرایی را در `~/.local/bin/pkgport` می‌گذارد. اگر برنامه را از منوی برنامه‌ها باز می‌کنید، بعد از تغییر کد آن را دوباره بسازید تا نسخه‌ی تازه اجرا شود.
+در لینوکس، بسته‌ی `.deb` را از صفحه‌ی انتشارها نصب کنید تا راه‌انداز منوی برنامه‌ها و آیکن اضافه شوند. فایل اجرایی ساخته‌شده روی دستگاه خودتان را می‌توانید مستقیم از `target/release/pkgport` اجرا کنید.
 
 <details>
 <summary><strong>وابستگی‌های ساخت در لینوکس</strong></summary>
