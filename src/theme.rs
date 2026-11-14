@@ -1,0 +1,55 @@
+use gpui_kit::component::{Theme, ThemeMode};
+use gpui_kit::{rgb, App};
+
+pub fn apply(cx: &mut App) {
+    Theme::change(ThemeMode::Dark, None, cx);
+    Theme::update(cx, |theme| {
+        let background = rgb(0x111113).into();
+        let panel = rgb(0x1C1C20).into();
+        let divider = rgb(0x303036).into();
+        let brand = rgb(0xEA5145).into();
+        let hover = rgb(0xFF6B5F).into();
+        let on_brand = rgb(0x140B0A).into();
+        let foreground = rgb(0xF5F2F2).into();
+        let muted = rgb(0xA8A5AE).into();
+        theme.background = background;
+        theme.foreground = foreground;
+        theme.muted_foreground = muted;
+        theme.secondary_foreground = muted;
+        theme.border = divider;
+        theme.input = divider;
+        theme.group_box = panel;
+        theme.group_box_foreground = foreground;
+        theme.popover = panel;
+        theme.popover_foreground = foreground;
+        theme.secondary = panel;
+        theme.muted = panel;
+        theme.skeleton = divider;
+        theme.colors.list = panel;
+        theme.list_even = panel;
+        theme.list_head = panel;
+        theme.table = panel;
+        theme.table_even = panel;
+        theme.table_row_border = divider;
+        theme.title_bar = background;
+        theme.title_bar_border = divider;
+        theme.status_bar = background;
+        theme.status_bar_border = divider;
+        theme.primary = brand;
+        theme.primary_active = brand;
+        theme.primary_hover = hover;
+        theme.primary_foreground = on_brand;
+        theme.button_primary = brand;
+        theme.button_primary_active = brand;
+        theme.button_primary_hover = hover;
+        theme.button_primary_foreground = on_brand;
+        theme.progress_bar = brand;
+        theme.link = brand;
+        theme.link_active = brand;
+        theme.link_hover = hover;
+        theme.ring = brand;
+        theme.caret = brand;
+        theme.success = rgb(0x78D6A0).into();
+        theme.danger = rgb(0xFF938A).into();
+    });
+}

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=PKGPort
+Comment=Download PS console package files over the local network
+Exec=pkgport
+Icon=pkgport
+Categories=Network;FileTransfer;
+Terminal=false

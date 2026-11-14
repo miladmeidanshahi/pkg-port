@@ -1,0 +1,22 @@
+/target/
+/dist/
+
+# Local development settings and agent state
+/AGENTS.md
+/CLAUDE.md
+/.claude-flow/
+/.swarm/
+/graphify-out/
+/.claude/settings.json
+/.claude/proven-config.json
+/.claude/.proven-config-version
+
+# Local environment and operating system files
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db
+*.log
+*.rs.bk
+*.dSYM/

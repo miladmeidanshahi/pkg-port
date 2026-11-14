@@ -1,0 +1,446 @@
+_version: 2
+app:
+  dev_preview_notice:
+    en: "Development preview: game title and ID are real; package links, files, device, and transfer are simulated. Do not use the copied links."
+    fa: "پیش‌نمایش توسعه: نام و شناسهٔ بازی واقعی‌اند؛ نشانی‌های بسته، فایل‌ها، دستگاه و انتقال شبیه‌سازی شده‌اند. از نشانی‌های کپی‌شده استفاده نکنید."
+  proxy_setup:
+    en: "Proxy setup"
+    fa: "تنظیم پروکسی"
+  proxy_intro:
+    en: "Connect your device through this computer on the same local network."
+    fa: "دستگاهتان را از طریق این رایانه و در همان شبکهٔ محلی متصل کنید."
+  device_setup:
+    en: "Device setup"
+    fa: "تنظیم دستگاه"
+  network_interface:
+    en: "Network interface"
+    fa: "رابط شبکه"
+  select_interface:
+    en: "Select a network interface"
+    fa: "رابط شبکه را انتخاب کنید"
+  suggested:
+    en: "suggested"
+    fa: "پیشنهادی"
+  no_interfaces:
+    en: "No compatible local IPv4 interface found. Connect to a local network, then restart the app."
+    fa: "رابط IPv4 محلی سازگاری پیدا نشد. به شبکهٔ محلی وصل شوید و برنامه را دوباره باز کنید."
+  proxy_address:
+    en: "Proxy address"
+    fa: "آدرس پروکسی"
+  no_device_address:
+    en: "Select a compatible interface to get the device address."
+    fa: "برای دریافت نشانی دستگاه، رابط سازگاری انتخاب کنید."
+  copy:
+    en: "Copy"
+    fa: "کپی"
+  copy_address:
+    en: "Copy proxy address"
+    fa: "کپی نشانی پروکسی"
+  copy_port:
+    en: "Copy proxy port"
+    fa: "کپی درگاه پروکسی"
+  copy_folder_path:
+    en: "Copy folder path"
+    fa: "کپی مسیر پوشه"
+  address_copied:
+    en: "Address copied"
+    fa: "نشانی کپی شد"
+  port_copied:
+    en: "Port copied"
+    fa: "درگاه کپی شد"
+  path_copied:
+    en: "Folder path copied"
+    fa: "مسیر پوشه کپی شد"
+  start_proxy:
+    en: "Start proxy"
+    fa: "شروع پروکسی"
+  stop_proxy:
+    en: "Stop proxy"
+    fa: "توقف پروکسی"
+  proxy_stopped_caption:
+    en: "Start the proxy before connecting."
+    fa: "پیش از اتصال دستگاه، پروکسی را شروع کنید."
+  proxy_running_caption:
+    en: "Enter this address and port on your device."
+    fa: "این نشانی و درگاه را در دستگاهتان وارد کنید."
+  stopped:
+    en: "Stopped"
+    fa: "متوقف"
+  running:
+    en: "Running"
+    fa: "فعال"
+  failed:
+    en: "Failed"
+    fa: "ناموفق"
+  starting:
+    en: "Starting…"
+    fa: "در حال شروع…"
+  stopping:
+    en: "Stopping…"
+    fa: "در حال توقف…"
+  proxy_start_stopped:
+    en: "Proxy start stopped unexpectedly"
+    fa: "شروع پروکسی ناگهان متوقف شد"
+  proxy_stop_stopped:
+    en: "Proxy stop stopped unexpectedly"
+    fa: "توقف پروکسی ناگهان قطع شد"
+  folder_check_stopped:
+    en: "Folder check stopped unexpectedly"
+    fa: "بررسی پوشه ناگهان متوقف شد"
+  on_your_device:
+    en: "On your device"
+    fa: "در دستگاهتان"
+  device_guide_one:
+    en: "Open your device’s network settings."
+    fa: "تنظیمات شبکهٔ دستگاهتان را باز کنید."
+  device_guide_two:
+    en: "Choose Manual proxy."
+    fa: "پروکسی دستی را انتخاب کنید."
+  device_guide_three:
+    en: "Enter the address and port shown here, then save."
+    fa: "نشانی و درگاه را وارد کنید. سپس ذخیره کنید."
+  advanced_settings:
+    en: "Advanced settings"
+    fa: "تنظیمات پیشرفته"
+  all_interfaces:
+    en: "All interfaces · 0.0.0.0"
+    fa: "همهٔ رابط‌ها · 0.0.0.0"
+  all_interfaces_help:
+    en: "All interfaces listens on every local IPv4 interface. Use the proxy address shown above on your device."
+    fa: "گزینهٔ همهٔ رابط‌ها روی تمام رابط‌های IPv4 محلی گوش می‌دهد. در دستگاهتان از نشانی پروکسیِ نشان‌داده‌شده در بالا استفاده کنید."
+  listening_port:
+    en: "Listening port"
+    fa: "درگاه شنود"
+  invalid_port_inline:
+    en: "Enter a whole number from 1 to 65535."
+    fa: "عدد صحیحی بین ۱ تا ۶۵۵۳۵ وارد کنید."
+  detected_package:
+    en: "Detected package"
+    fa: "بستهٔ شناسایی‌شده"
+  waiting_for_package:
+    en: "Waiting for the first package request from your device."
+    fa: "در انتظار نخستین درخواست بسته از دستگاهتان هستیم."
+  start_proxy_first:
+    en: "Start the proxy to detect a package request."
+    fa: "برای شناسایی درخواست بسته، پروکسی را شروع کنید."
+  back_to_proxy:
+    en: "Back to Proxy"
+    fa: "بازگشت به پروکسی"
+  continue_to_folder:
+    en: "Continue to PKG folder"
+    fa: "ادامه به پوشهٔ PKG"
+  use_local_files:
+    en: "Use local files"
+    fa: "استفاده از فایل‌های محلی"
+  use_local_files_help:
+    en: "If you have complete .pkg parts, choose their folder in the next step. Matching requests use these local files."
+    fa: "اگر همهٔ بخش‌های .pkg را دارید،\nپوشه‌شان را در گام بعد انتخاب کنید.\nپروکسی از فایل‌های محلی استفاده می‌کند."
+  local_package_folder:
+    en: "Local package folder"
+    fa: "پوشهٔ محلی بسته"
+  choose_folder:
+    en: "Choose folder"
+    fa: "انتخاب پوشه"
+  change_folder:
+    en: "Change folder"
+    fa: "تغییر پوشه"
+  checking_folder:
+    en: "Checking folder…"
+    fa: "در حال بررسی پوشه…"
+  no_pkg_files:
+    en: "No .pkg files found"
+    fa: "فایل .pkg پیدا نشد"
+  unreadable_folder:
+    en: "Cannot read folder"
+    fa: "خواندن پوشه ممکن نیست"
+  pkg_files_found:
+    en: "Package files found"
+    fa: "فایل‌های بسته پیدا شدند"
+  folder_selected:
+    en: "Folder selected"
+    fa: "پوشه انتخاب شد"
+  pkg_files_count:
+    en: ".pkg files found"
+    fa: "فایل .pkg پیدا شد"
+  package_ready:
+    en: "Required parts are present"
+    fa: "بخش‌های لازم موجودند"
+  missing_required_parts:
+    en: "Required parts present"
+    fa: "بخش‌های لازم موجود"
+  readiness_unverified:
+    en: "Package readiness is not verified until all required part URLs are known."
+    fa: "تا شناسایی همهٔ نشانی‌های بخش‌ها، بسته تأیید نمی‌شود."
+  folder_checklist:
+    en: "Folder checklist"
+    fa: "فهرست بررسی پوشه"
+  folder_check_one:
+    en: "Put all required package parts in the same folder."
+    fa: "همهٔ بخش‌های لازم بسته را در یک پوشه بگذارید."
+  folder_check_two:
+    en: "Keep the original filenames so requests can match."
+    fa: "نام اصلی فایل‌ها را نگه دارید.\nتا درخواست‌ها با آن‌ها مطابق شوند."
+  back_to_game:
+    en: "Back to Game content"
+    fa: "بازگشت به محتوای بازی"
+  current_step:
+    en: "Current"
+    fa: "گام کنونی"
+  completed_step:
+    en: "Complete"
+    fa: "کامل"
+  upcoming_step:
+    en: "Upcoming"
+    fa: "در پیش"
+  needs_setup:
+    en: "Needs setup"
+    fa: "نیازمند تنظیم"
+  settings_not_saved:
+    en: "Settings could not be saved"
+    fa: "ذخیرهٔ تنظیمات ممکن نشد"
+  invalid_bind_address:
+    en: "Enter a valid IPv4 bind address"
+    fa: "نشانی IPv4 معتبر وارد کنید"
+  invalid_port:
+    en: "Enter a port between 1 and 65535"
+    fa: "درگاه باید بین ۱ تا ۶۵۵۳۵ باشد"
+  url_list_limit:
+    en: "URL list limit reached; newer URLs are omitted."
+    fa: "فهرست نشانی‌ها به سقف مجاز رسیده است؛ نشانی‌های تازه‌تر نمایش داده نمی‌شوند."
+  cover_unavailable:
+    en: "Cover unavailable"
+    fa: "جلد بازی در دسترس نیست"
+  metadata_lookup_stopped:
+    en: "Metadata lookup stopped"
+    fa: "دریافت اطلاعات بازی متوقف شد"
+  select_pkg_folder:
+    en: "Select PKG folder"
+    fa: "انتخاب پوشهٔ PKG"
+  folder_picker_failed:
+    en: "Folder picker failed"
+    fa: "انتخاب پوشه انجام نشد"
+  proxy_stopped:
+    en: "Proxy stopped"
+    fa: "پروکسی متوقف شد"
+  network_logs:
+    en: "Network logs"
+    fa: "گزارش شبکه"
+  http_urls_omit_query_values_https_paths_remain_e:
+    en: "HTTP URLs omit query values. HTTPS paths remain encrypted."
+    fa: "در نشانی‌های HTTP، مقدار پارامترهای پرس‌وجو نمایش داده نمی‌شود. مسیرهای HTTPS رمزگذاری شده‌اند."
+  clear:
+    en: "Clear"
+    fa: "پاک‌کردن"
+  game_content:
+    en: "Game content"
+    fa: "محتوای بازی"
+  no_game_package_detected_yet_start_the_proxy_and:
+    en: "No game package detected yet. Start the proxy and request a game package from the console."
+    fa: "هنوز فایل بازی شناسایی نشده است. پروکسی را روشن کنید و از کنسول درخواست دانلود بدهید."
+  open_proxy_setup:
+    en: "Open proxy setup"
+    fa: "تنظیم پروکسی"
+  no_cover:
+    en: "No cover"
+    fa: "بدون تصویر جلد"
+  unknown_game:
+    en: "Unknown game"
+    fa: "بازی ناشناس"
+  loading_game_details:
+    en: "Loading game details…"
+    fa: "اطلاعات بازی در حال بارگذاری است…"
+  details_unavailable:
+    en: "Details unavailable"
+    fa: "اطلاعات بازی در دسترس نیست"
+  game_details_loaded:
+    en: "Details loaded"
+    fa: "اطلاعات بارگذاری شد"
+  title_id:
+    en: "Title ID"
+    fa: "شناسهٔ بازی"
+  package_region:
+    en: "Region"
+    fa: "ریجن"
+  region_europe:
+    en: "Europe"
+    fa: "اروپا"
+  region_north_america:
+    en: "North America"
+    fa: "آمریکای شمالی"
+  region_japan:
+    en: "Japan"
+    fa: "ژاپن"
+  region_asia:
+    en: "Asia"
+    fa: "آسیا"
+  region_china:
+    en: "China"
+    fa: "چین"
+  region_korea:
+    en: "Korea"
+    fa: "کره"
+  device:
+    en: "Device"
+    fa: "دستگاه"
+  hide_package_urls:
+    en: "Hide package URLs"
+    fa: "پنهان‌کردن نشانی‌ها"
+  show_package_urls:
+    en: "Show package URLs"
+    fa: "نمایش نشانی‌های بسته"
+  package_urls:
+    en: "Package URLs"
+    fa: "نشانی‌های بسته"
+  retry:
+    en: "Retry"
+    fa: "تلاش دوباره"
+  package_part_urls:
+    en: "Package part URLs"
+    fa: "نشانی‌های بخش‌های بسته"
+  finding_package_parts:
+    en: "Checking numbered package parts…"
+    fa: "بخش‌های شماره‌دار بسته در حال بررسی‌اند…"
+  total_parts:
+    en: "Verified contiguous parts"
+    fa: "بخش‌های پی‌درپی تأییدشده"
+  part_search_incomplete:
+    en: "Part search incomplete"
+    fa: "جست‌وجوی بخش‌ها کامل نشد"
+  only_observed_parts:
+    en: "Only parts observed through the proxy are listed."
+    fa: "فقط بخش‌هایی که از پروکسی درخواست شده‌اند نمایش داده می‌شوند."
+  copy_all_urls:
+    en: "Copy all URLs"
+    fa: "کپی همهٔ نشانی‌ها"
+  copy_url:
+    en: "Copy URL"
+    fa: "کپی نشانی"
+  game_url_copied:
+    en: "Package URL copied"
+    fa: "نشانی بسته کپی شد"
+  all_urls_copied:
+    en: "All package URLs copied"
+    fa: "همهٔ نشانی‌های بسته کپی شدند"
+  proxy_listening_on:
+    en: "Proxy listening on"
+    fa: "پروکسی فعال روی"
+  logs:
+    en: "Logs"
+    fa: "گزارش‌ها"
+  proxy:
+    en: "Proxy"
+    fa: "پروکسی"
+  pkg_folder:
+    en: "PKG folder"
+    fa: "پوشهٔ PKG"
+  upload_to_console:
+    en: "Upload to console"
+    fa: "ارسال به کنسول"
+  upload_intro:
+    en: "Follow each package file as your PlayStation requests it."
+    fa: "هر فایل بسته را همان‌گونه که پلی‌استیشن درخواست می‌کند دنبال کنید."
+  console_transfer:
+    en: "Console transfer"
+    fa: "انتقال به کنسول"
+  waiting_for_console:
+    en: "Waiting for console"
+    fa: "در انتظار کنسول"
+  uploading:
+    en: "Uploading"
+    fa: "در حال ارسال"
+  files_sent:
+    en: "Files sent"
+    fa: "فایل‌ها ارسال شدند"
+  sent_state:
+    en: "Sent"
+    fa: "ارسال شد"
+  this_computer:
+    en: "This computer"
+    fa: "این رایانه"
+  local_proxy:
+    en: "Local proxy"
+    fa: "پروکسی محلی"
+  playstation:
+    en: "PlayStation"
+    fa: "پلی‌استیشن"
+  overall_progress:
+    en: "Overall progress"
+    fa: "پیشرفت کلی"
+  upload_speed:
+    en: "Upload speed"
+    fa: "سرعت ارسال"
+  data_sent:
+    en: "Data sent"
+    fa: "دادهٔ ارسالی"
+  current_request_url:
+    en: "Current request URL"
+    fa: "نشانی درخواست کنونی"
+  waiting_for_package_request:
+    en: "Waiting for a package request…"
+    fa: "در انتظار درخواست بسته…"
+  no_active_request:
+    en: "No active request"
+    fa: "درخواست فعالی نیست"
+  no_file_uploading:
+    en: "No file uploading"
+    fa: "فایلی در حال ارسال نیست"
+  url_copied:
+    en: "URL copied"
+    fa: "نشانی رونوشت شد"
+  package_files:
+    en: "Package files"
+    fa: "فایل‌های بسته"
+  waiting:
+    en: "Waiting"
+    fa: "در انتظار"
+  sent:
+    en: "sent"
+    fa: "ارسال‌شده"
+  interrupted:
+    en: "Interrupted"
+    fa: "ناتمام"
+  back_to_folder:
+    en: "Back to PKG folder"
+    fa: "بازگشت به پوشهٔ PKG"
+  continue_to_upload:
+    en: "Continue to upload"
+    fa: "ادامه به ارسال"
+  mb_per_second:
+    en: "MB/s"
+    fa: "مگابایت بر ثانیه"
+  overall_upload_progress:
+    en: "Overall upload progress"
+    fa: "پیشرفت کلی ارسال"
+  current_file_progress:
+    en: "Current file progress"
+    fa: "پیشرفت فایل کنونی"
+  bind_ipv4:
+    en: "Bind IPv4"
+    fa: "نشانی IPv4"
+  port:
+    en: "Port"
+    fa: "پورت"
+  detected_allowed_ipv4_subnets:
+    en: "Detected allowed IPv4 subnets"
+    fa: "زیرشبکه‌های مجاز شناسایی‌شده"
+  none:
+    en: "none"
+    fa: "هیچ‌کدام"
+  only_peers_on_detected_local_ipv4_subnets_are_ac:
+    en: "Only peers on detected local IPv4 subnets are accepted. HTTPS is tunneled, not decrypted."
+    fa: "فقط دستگاه‌های زیرشبکهٔ محلی شناسایی‌شده پذیرفته می‌شوند. ترافیک HTTPS بدون رمزگشایی عبور می‌کند."
+  any_device_on_those_subnets_may_use_the_proxy_wh:
+    en: "Devices on allowed local subnets can use the proxy while it runs."
+    fa: "دستگاه‌های شبکهٔ محلی مجاز\nمی‌توانند از پروکسی استفاده کنند."
+  https_remains_encrypted:
+    en: "HTTPS remains end-to-end encrypted."
+    fa: "ارتباط HTTPS همچنان از ابتدا تا انتها رمزگذاری‌شده می‌ماند."
+  game_content_detected_from_playstation_package_r:
+    en: "Review the package detected from your PlayStation."
+    fa: "بستهٔ شناسایی‌شده از پلی‌استیشن خود را بررسی کنید."
+  select_the_folder_containing_complete_pkg_parts:
+    en: "Select the folder containing complete .pkg parts. Matching PlayStation HTTP package requests use these local files."
+    fa: "پوشه فایل‌های کامل .pkg را انتخاب کنید. درخواست‌های HTTP پلی‌استیشن با فایل‌های محلی پاسخ داده می‌شوند."
+  no_folder_selected:
+    en: "No folder selected"
+    fa: "پوشه‌ای انتخاب نشده است"

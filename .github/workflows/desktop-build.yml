@@ -1,0 +1,118 @@
+name: Desktop builds
+
+on:
+  push:
+    branches: ["**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: ${{ matrix.artifact }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            artifact: pkgport-linux-x86_64.deb
+            binary: target/release/pkgport
+          - runner: windows-2022
+            artifact: pkgport-windows-x86_64.exe
+            binary: target/release/pkgport.exe
+          - runner: macos-15
+            artifact: pkgport-macos-aarch64.dmg
+            arch: aarch64
+            binary: target/release/pkgport
+          - runner: macos-15-intel
+            artifact: pkgport-macos-x86_64.dmg
+            arch: x86_64
+            binary: target/release/pkgport
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Linux libraries
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc g++ clang libfontconfig-dev libwayland-dev \
+            libwebkit2gtk-4.1-dev libxkbcommon-x11-dev libx11-xcb-dev \
+            libssl-dev libzstd-dev libasound2-dev vulkan-validationlayers libvulkan1
+      - name: Use stable Rust
+        run: rustup update stable
+      - name: Check toolchain
+        run: |
+          rustc --version
+          cargo --version
+      - name: Test
+        run: cargo test --locked --release
+      - name: Build release executable
+        run: cargo build --locked --release
+      - name: Package executable
+        shell: bash
+        env:
+          ARTIFACT: ${{ matrix.artifact }}
+          BINARY: ${{ matrix.binary }}
+          ARCH: ${{ matrix.arch }}
+        run: |
+          mkdir -p dist
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            cp "$BINARY" "dist/$ARTIFACT"
+          elif [[ "$RUNNER_OS" == "Linux" ]]; then
+            root="dist/pkgport-deb"
+            install -Dm755 "$BINARY" "$root/usr/bin/pkgport"
+            install -Dm644 assets/pkgport.desktop "$root/usr/share/applications/pkgport.desktop"
+            for size in 32 128 256; do
+              install -Dm644 "assets/icon-$size.png" "$root/usr/share/icons/hicolor/${size}x${size}/apps/pkgport.png"
+            done
+            install -Dm644 assets/icon.svg "$root/usr/share/icons/hicolor/scalable/apps/pkgport.svg"
+            install -d "$root/DEBIAN"
+            version="$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -n1)"
+            printf 'Package: pkgport\nVersion: %s+%s\nArchitecture: amd64\nMaintainer: PKGPort contributors\nDescription: Local proxy for PlayStation package files\n' \
+              "$version" "${GITHUB_SHA:0:12}" > "$root/DEBIAN/control"
+            dpkg-deb --build --root-owner-group "$root" "dist/$ARTIFACT"
+          else
+            app="dist/PKGPort.app/Contents"
+            mkdir -p "$app/MacOS"
+            cp "$BINARY" "$app/MacOS/pkgport"
+            chmod +x "$app/MacOS/pkgport"
+            printf '%s\n' '<?xml version="1.0" encoding="UTF-8"?>' \
+              '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">' \
+              '<plist version="1.0"><dict><key>CFBundleExecutable</key><string>pkgport</string><key>CFBundleIdentifier</key><string>com.pkgport.desktop</string><key>CFBundleName</key><string>PKGPort</string><key>CFBundlePackageType</key><string>APPL</string><key>CFBundleVersion</key><string>0.1.0</string></dict></plist>' \
+              > "$app/Info.plist"
+            printf 'APPL????' > "$app/PkgInfo"
+            hdiutil create -volname "PKGPort ($ARCH)" -srcfolder dist/PKGPort.app \
+              -ov -format UDZO "dist/$ARTIFACT"
+          fi
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: dist/*
+          if-no-files-found: error
+
+  publish:
+    name: Publish GitHub prerelease
+    needs: build
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Download build files
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.sha }}
+          name: PKGPort build ${{ github.sha }}
+          target_commitish: ${{ github.sha }}
+          prerelease: true
+          make_latest: false
+          fail_on_unmatched_files: true
+          files: dist/*
