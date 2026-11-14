@@ -16,15 +16,15 @@ ArchitecturesInstallIn64BitMode=x64
 UsePreviousAppDir=yes
 CloseApplications=yes
 UninstallDisplayIcon={app}\pkgport.exe
-SetupIconFile=assets\icon.ico
-OutputDir=dist
+SetupIconFile=..\assets\icon.ico
+OutputDir=..\dist
 OutputBaseFilename=pkgport-{#AppVersion}-windows-x86_64-setup
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
 
 [Files]
-Source: "target\release\pkgport.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\target\release\pkgport.exe"; DestDir: "{app}"; Flags: ignoreversion
 
 [Tasks]
 Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Additional icons:"; Flags: unchecked
