@@ -90,12 +90,13 @@ jobs:
             dpkg-deb --build --root-owner-group "$root" "dist/$artifact"
           else
             app="dist/PKGPort.app/Contents"
-            mkdir -p "$app/MacOS"
+            mkdir -p "$app/MacOS" "$app/Resources"
             cp "$BINARY" "$app/MacOS/pkgport"
+            cp assets/icon.icns "$app/Resources/PKGPort.icns"
             chmod +x "$app/MacOS/pkgport"
             printf '%s\n' '<?xml version="1.0" encoding="UTF-8"?>' \
               '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">' \
-              '<plist version="1.0"><dict><key>CFBundleExecutable</key><string>pkgport</string><key>CFBundleIdentifier</key><string>com.pkgport.desktop</string><key>CFBundleName</key><string>PKGPort</string><key>CFBundlePackageType</key><string>APPL</string><key>CFBundleShortVersionString</key><string>%s</string><key>CFBundleVersion</key><string>%s</string></dict></plist>' \
+              '<plist version="1.0"><dict><key>CFBundleExecutable</key><string>pkgport</string><key>CFBundleIconFile</key><string>PKGPort.icns</string><key>CFBundleIdentifier</key><string>com.pkgport.desktop</string><key>CFBundleName</key><string>PKGPort</string><key>CFBundlePackageType</key><string>APPL</string><key>CFBundleShortVersionString</key><string>%s</string><key>CFBundleVersion</key><string>%s</string></dict></plist>' \
               "$VERSION" "$VERSION" > "$app/Info.plist"
             printf 'APPL????' > "$app/PkgInfo"
             hdiutil create -volname "PKGPort ($ARCH)" -srcfolder dist/PKGPort.app \
@@ -117,6 +118,7 @@ jobs:
             mkdir -p "$extracted"
             dpkg-deb --extract "$file" "$extracted"
             test -x "$extracted/usr/bin/pkgport"
+            test -f "$extracted/usr/share/icons/hicolor/256x256/apps/pkgport.png"
           else
             hdiutil verify "$file"
             mount="$RUNNER_TEMP/pkgport-dmg"
@@ -124,6 +126,9 @@ jobs:
             trap 'hdiutil detach "$mount" >/dev/null 2>&1 || true' EXIT
             hdiutil attach -readonly -nobrowse -mountpoint "$mount" "$file"
             test -x "$mount/PKGPort.app/Contents/MacOS/pkgport"
+            test -f "$mount/PKGPort.app/Contents/Resources/PKGPort.icns"
+            /usr/libexec/PlistBuddy -c 'Print :CFBundleIconFile' \
+              "$mount/PKGPort.app/Contents/Info.plist" | grep -qx 'PKGPort.icns'
           fi
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
