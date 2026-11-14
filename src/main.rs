@@ -494,7 +494,7 @@ impl App {
         app
     }
 
-    #[cfg(debug_assertions)]
+    #[cfg(any(debug_assertions, test))]
     fn apply_dev_mock(&mut self) {
         let path = PathBuf::from("/tmp/pkgport-preview");
         let first_url = TEST_GAME_URL.replace("GRANDTHEFTAUTO00", "GTAVISTANDARD001");
