@@ -24,10 +24,12 @@
 
 | سیستم‌عامل | نام فایل در صفحه‌ی انتشار |
 | --- | --- |
-| ویندوز x86_64 | `pkgport-windows-x86_64.exe` |
-| لینوکس x86_64 | `pkgport-linux-x86_64.deb` |
-| مک با Apple Silicon | `pkgport-macos-aarch64.dmg` |
-| مک با پردازنده‌ی Intel | `pkgport-macos-x86_64.dmg` |
+| ویندوز x86_64 | `pkgport-<version>-windows-x86_64.exe` |
+| لینوکس x86_64 | `pkgport-<version>-linux-x86_64.deb` |
+| مک با Apple Silicon | `pkgport-<version>-macos-aarch64.dmg` |
+| مک با پردازنده‌ی Intel | `pkgport-<version>-macos-x86_64.dmg` |
+
+کنار فایل‌ها، `SHA256SUMS.txt` هم برای بررسی سالم بودن فایل‌های دانلودشده قرار می‌گیرد.
 
 فایل‌ها فعلاً امضا نشده‌اند.
 

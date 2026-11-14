@@ -24,10 +24,12 @@ Each successful push publishes a prerelease with all four builds. Pick the newes
 
 | Platform | Release file |
 | --- | --- |
-| Windows x86_64 | `pkgport-windows-x86_64.exe` |
-| Linux x86_64 | `pkgport-linux-x86_64.deb` |
-| macOS Apple Silicon | `pkgport-macos-aarch64.dmg` |
-| macOS Intel | `pkgport-macos-x86_64.dmg` |
+| Windows x86_64 | `pkgport-<version>-windows-x86_64.exe` |
+| Linux x86_64 | `pkgport-<version>-linux-x86_64.deb` |
+| macOS Apple Silicon | `pkgport-<version>-macos-aarch64.dmg` |
+| macOS Intel | `pkgport-<version>-macos-x86_64.dmg` |
+
+Each release also includes `SHA256SUMS.txt` to check downloaded files.
 
 All builds are currently unsigned.
 

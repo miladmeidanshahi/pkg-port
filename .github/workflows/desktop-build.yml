@@ -12,22 +12,29 @@ jobs:
   build:
     name: ${{ matrix.artifact }}
     runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     strategy:
       fail-fast: false
       matrix:
         include:
           - runner: ubuntu-24.04
-            artifact: pkgport-linux-x86_64.deb
+            artifact: pkgport-linux-x86_64
+            suffix: linux-x86_64.deb
             binary: target/release/pkgport
           - runner: windows-2022
-            artifact: pkgport-windows-x86_64.exe
+            artifact: pkgport-windows-x86_64
+            suffix: windows-x86_64.exe
             binary: target/release/pkgport.exe
           - runner: macos-15
-            artifact: pkgport-macos-aarch64.dmg
+            artifact: pkgport-macos-aarch64
+            suffix: macos-aarch64.dmg
             arch: aarch64
             binary: target/release/pkgport
           - runner: macos-15-intel
-            artifact: pkgport-macos-x86_64.dmg
+            artifact: pkgport-macos-x86_64
+            suffix: macos-x86_64.dmg
             arch: x86_64
             binary: target/release/pkgport
 
@@ -42,6 +49,13 @@ jobs:
             libssl-dev libzstd-dev libasound2-dev vulkan-validationlayers libvulkan1
       - name: Use stable Rust
         run: rustup update stable
+      - name: Read package version
+        id: version
+        shell: bash
+        run: |
+          version="$(cargo metadata --no-deps --format-version 1 | python3 -c 'import json, sys; print(next(p["version"] for p in json.load(sys.stdin)["packages"] if p["name"] == "pkgport"))')"
+          test -n "$version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
       - name: Check toolchain
         run: |
           rustc --version
@@ -53,13 +67,15 @@ jobs:
       - name: Package executable
         shell: bash
         env:
-          ARTIFACT: ${{ matrix.artifact }}
+          VERSION: ${{ steps.version.outputs.version }}
+          SUFFIX: ${{ matrix.suffix }}
           BINARY: ${{ matrix.binary }}
           ARCH: ${{ matrix.arch }}
         run: |
+          artifact="pkgport-$VERSION-$SUFFIX"
           mkdir -p dist
           if [[ "$RUNNER_OS" == "Windows" ]]; then
-            cp "$BINARY" "dist/$ARTIFACT"
+            cp "$BINARY" "dist/$artifact"
           elif [[ "$RUNNER_OS" == "Linux" ]]; then
             root="dist/pkgport-deb"
             install -Dm755 "$BINARY" "$root/usr/bin/pkgport"
@@ -69,10 +85,9 @@ jobs:
             done
             install -Dm644 assets/icon.svg "$root/usr/share/icons/hicolor/scalable/apps/pkgport.svg"
             install -d "$root/DEBIAN"
-            version="$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -n1)"
             printf 'Package: pkgport\nVersion: %s+%s\nArchitecture: amd64\nMaintainer: PKGPort contributors\nDescription: Local proxy for PlayStation package files\n' \
-              "$version" "${GITHUB_SHA:0:12}" > "$root/DEBIAN/control"
-            dpkg-deb --build --root-owner-group "$root" "dist/$ARTIFACT"
+              "$VERSION" "${GITHUB_SHA:0:12}" > "$root/DEBIAN/control"
+            dpkg-deb --build --root-owner-group "$root" "dist/$artifact"
           else
             app="dist/PKGPort.app/Contents"
             mkdir -p "$app/MacOS"
@@ -80,11 +95,35 @@ jobs:
             chmod +x "$app/MacOS/pkgport"
             printf '%s\n' '<?xml version="1.0" encoding="UTF-8"?>' \
               '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">' \
-              '<plist version="1.0"><dict><key>CFBundleExecutable</key><string>pkgport</string><key>CFBundleIdentifier</key><string>com.pkgport.desktop</string><key>CFBundleName</key><string>PKGPort</string><key>CFBundlePackageType</key><string>APPL</string><key>CFBundleVersion</key><string>0.1.0</string></dict></plist>' \
-              > "$app/Info.plist"
+              '<plist version="1.0"><dict><key>CFBundleExecutable</key><string>pkgport</string><key>CFBundleIdentifier</key><string>com.pkgport.desktop</string><key>CFBundleName</key><string>PKGPort</string><key>CFBundlePackageType</key><string>APPL</string><key>CFBundleShortVersionString</key><string>%s</string><key>CFBundleVersion</key><string>%s</string></dict></plist>' \
+              "$VERSION" "$VERSION" > "$app/Info.plist"
             printf 'APPL????' > "$app/PkgInfo"
             hdiutil create -volname "PKGPort ($ARCH)" -srcfolder dist/PKGPort.app \
-              -ov -format UDZO "dist/$ARTIFACT"
+              -ov -format UDZO "dist/$artifact"
+          fi
+      - name: Verify package contents
+        shell: bash
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          SUFFIX: ${{ matrix.suffix }}
+        run: |
+          file="dist/pkgport-$VERSION-$SUFFIX"
+          test -s "$file"
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            test "$(od -An -t x1 -N 2 "$file" | tr -d ' \n')" = "4d5a"
+          elif [[ "$RUNNER_OS" == "Linux" ]]; then
+            dpkg-deb --info "$file" >/dev/null
+            extracted="$RUNNER_TEMP/pkgport-deb"
+            mkdir -p "$extracted"
+            dpkg-deb --extract "$file" "$extracted"
+            test -x "$extracted/usr/bin/pkgport"
+          else
+            hdiutil verify "$file"
+            mount="$RUNNER_TEMP/pkgport-dmg"
+            mkdir -p "$mount"
+            trap 'hdiutil detach "$mount" >/dev/null 2>&1 || true' EXIT
+            hdiutil attach -readonly -nobrowse -mountpoint "$mount" "$file"
+            test -x "$mount/PKGPort.app/Contents/MacOS/pkgport"
           fi
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
@@ -98,6 +137,7 @@ jobs:
     needs: build
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-24.04
+    timeout-minutes: 60
     permissions:
       contents: write
     steps:
@@ -106,13 +146,29 @@ jobs:
         with:
           path: dist
           merge-multiple: true
+      - name: Generate SHA-256 checksums
+        run: cd dist && sha256sum pkgport-* > SHA256SUMS.txt
       - name: Create release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: build-${{ github.sha }}
-          name: PKGPort build ${{ github.sha }}
+          name: PKGPort ${{ needs.build.outputs.version }} (build ${{ github.run_number }})
           target_commitish: ${{ github.sha }}
           prerelease: true
           make_latest: false
           fail_on_unmatched_files: true
+          generate_release_notes: true
+          body: |
+            ## Downloads / دریافت
+
+            Choose the file for your system. / فایل مناسب سیستم‌عامل خود را انتخاب کنید.
+
+            | Platform / سیستم‌عامل | Download |
+            | --- | --- |
+            | Windows x86_64 | [`.exe`](https://github.com/${{ github.repository }}/releases/download/build-${{ github.sha }}/pkgport-${{ needs.build.outputs.version }}-windows-x86_64.exe) |
+            | Linux x86_64 | [`.deb`](https://github.com/${{ github.repository }}/releases/download/build-${{ github.sha }}/pkgport-${{ needs.build.outputs.version }}-linux-x86_64.deb) |
+            | macOS Apple Silicon | [`.dmg`](https://github.com/${{ github.repository }}/releases/download/build-${{ github.sha }}/pkgport-${{ needs.build.outputs.version }}-macos-aarch64.dmg) |
+            | macOS Intel | [`.dmg`](https://github.com/${{ github.repository }}/releases/download/build-${{ github.sha }}/pkgport-${{ needs.build.outputs.version }}-macos-x86_64.dmg) |
+
+            [SHA256SUMS.txt](https://github.com/${{ github.repository }}/releases/download/build-${{ github.sha }}/SHA256SUMS.txt) contains checksums for the downloads.
           files: dist/*
