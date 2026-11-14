@@ -1299,7 +1299,55 @@ impl App {
                         ),
                 )
                 .child(
-                    DialogDescription::new().child(language.text("app.update_dialog_description")),
+                    div()
+                        .id("update-dialog-description")
+                        .test_support()
+                        .w_full()
+                        .min_w_0()
+                        .child(
+                            DialogDescription::new()
+                                .w_full()
+                                .min_w_0()
+                                .whitespace_normal()
+                                .when(rtl, |description| description.text_right())
+                                .child(
+                                    div()
+                                        .id("update-dialog-description-text")
+                                        .test_support()
+                                        .mt_3()
+                                        .w_full()
+                                        .min_w_0()
+                                        .whitespace_normal()
+                                        .when(rtl, |text| {
+                                            // shortcut: GPUI 0.9.1 clips soft-wrapped RTL glyphs; use flex word wrapping until its text renderer is fixed.
+                                            text.flex().flex_col().children(
+                                                language
+                                                    .text("app.update_dialog_description")
+                                                    .lines()
+                                                    .map(|line| {
+                                                        div()
+                                                            .flex()
+                                                            .flex_row_reverse()
+                                                            .flex_wrap()
+                                                            .gap_x_1()
+                                                            .children(line.split_whitespace().map(
+                                                                |word| {
+                                                                    div()
+                                                                        .flex_shrink_0()
+                                                                        .whitespace_nowrap()
+                                                                        .child(word.to_owned())
+                                                                },
+                                                            ))
+                                                    }),
+                                            )
+                                        })
+                                        .when(!rtl, |text| {
+                                            text.child(
+                                                language.text("app.update_dialog_description"),
+                                            )
+                                        }),
+                                ),
+                        ),
                 )
                 .footer(
                     DialogFooter::new()
@@ -2134,6 +2182,20 @@ mod tests {
             assert!(clear.visible());
             assert!(clear.bounds().right() <= px(420.));
             window.click("clear-folder", cx);
+            app.update(cx, |app, cx| {
+                app.available_update = Some(super::updates::AvailableUpdate {
+                    version: "0.1.2".parse().unwrap(),
+                    download_url: "https://github.com/miladmeidanshahi/pkg-port/releases".into(),
+                });
+                app.open_update_dialog(window, cx);
+            });
+            window.render_frame(cx);
+            let description = window.find("update-dialog-description").bounds();
+            assert!(description.left() >= px(0.) && description.right() <= px(420.));
+            let text = window.find("update-dialog-description-text").bounds();
+            assert!(text.left() >= description.left() && text.right() <= description.right());
+            assert!(text.size.height > window.rem_size() * 2.);
+            window.close_dialog(cx);
             let app = app.read(cx);
             assert!(app.package_dir.is_none());
             assert!(app.folder_check.is_none());
