@@ -107,6 +107,12 @@ fn main() {
     });
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum GuideConsole {
+    Ps4,
+    Ps5,
+}
+
 struct App {
     bind_ip: Entity<InputState>,
     bind_select: Entity<SelectState<SearchableVec<InterfaceOption>>>,
@@ -127,6 +133,7 @@ struct App {
     proxy_error: Option<String>,
     proxy_transition: Option<ProxyTransition>,
     current_step: usize,
+    console_guide: Option<(GuideConsole, usize)>,
     language: Language,
     persian_fonts_loaded: bool,
     show_game_urls: bool,
@@ -449,6 +456,7 @@ impl App {
             proxy_error: None,
             proxy_transition: None,
             current_step: 0,
+            console_guide: None,
             language,
             persian_fonts_loaded,
             show_game_urls: false,
@@ -1518,9 +1526,10 @@ impl Render for App {
 mod tests {
     use super::{
         package_parts_from, record_game_url, subnet_label, suggested_interface,
-        upload_status_until, App, GamePackage, IconName, LanInterface, TEST_GAME_URL,
+        upload_status_until, App, GamePackage, GuideConsole, IconName, LanInterface, TEST_GAME_URL,
     };
     use crate::ui::{disclosure_chevron, AppAssets};
+    use gpui_kit::component::WindowExt as _;
     use gpui_kit::test::TestWindowExt as _;
     use gpui_kit::{
         px, size, AppContext as _, AssetSource as _, Bounds, Point, TestAppContext, WindowBounds,
@@ -1714,6 +1723,36 @@ mod tests {
                 );
             }
 
+            window.click("ps5-guide-toggle", cx);
+            window.render_frame(cx);
+            assert!(window.find("console-guide-image").visible());
+            assert!(
+                window.find("console-guide-close").bounds().right()
+                    < window.find("console-guide-title").bounds().left(),
+                "RTL dialog close button should sit to the left of its title"
+            );
+            assert_eq!(app.read(cx).console_guide, Some((GuideConsole::Ps5, 0)));
+            window.scroll(
+                "content",
+                gpui_kit::ScrollDelta::Pixels(gpui_kit::point(px(0.), px(-800.))),
+                cx,
+            );
+            window.click("console-guide-next", cx);
+            window.render_frame(cx);
+            assert_eq!(app.read(cx).console_guide, Some((GuideConsole::Ps5, 1)));
+            window.close_dialog(cx);
+            window.render_frame(cx);
+            window.click("ps4-guide-toggle", cx);
+            window.render_frame(cx);
+            assert_eq!(app.read(cx).console_guide, Some((GuideConsole::Ps4, 0)));
+            window.click("console-guide-next", cx);
+            window.render_frame(cx);
+            assert_eq!(app.read(cx).console_guide, Some((GuideConsole::Ps4, 1)));
+            window.click("ps4-guide-toggle", cx);
+            window.render_frame(cx);
+            window.close_dialog(cx);
+            window.render_frame(cx);
+
             app.update(cx, |app, cx| {
                 app.current_step = 1;
                 cx.notify();
@@ -1875,6 +1914,18 @@ mod tests {
                     assert!(
                         window.find("proxy-guide-note-icon").bounds().top() <= note.top() + px(4.)
                     );
+                    app.update(cx, |app, cx| {
+                        app.console_guide = Some((GuideConsole::Ps5, 6));
+                        cx.notify();
+                    });
+                    app.update(cx, |app, cx| {
+                        app.console_guide = Some((GuideConsole::Ps4, 10));
+                        cx.notify();
+                    });
+                    app.update(cx, |app, cx| {
+                        app.console_guide = None;
+                        cx.notify();
+                    });
                 }
                 if step == 2 {
                     let count = window.find("folder-pkg-count");
@@ -2031,6 +2082,18 @@ mod tests {
             assert!(AppAssets.load(path).unwrap().is_some());
         }
         assert!(AppAssets.list("flags/").unwrap().len() == 2);
+        for step in 1..=9 {
+            assert!(AppAssets
+                .load(&format!("guides/ps5/{step}.webp"))
+                .unwrap()
+                .is_some());
+        }
+        for picture in 6..=17 {
+            assert!(AppAssets
+                .load(&format!("guides/ps4/{picture}.jpg"))
+                .unwrap()
+                .is_some());
+        }
     }
 
     #[test]

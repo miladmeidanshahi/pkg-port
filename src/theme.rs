@@ -1,5 +1,5 @@
 use gpui_kit::component::{Theme, ThemeMode};
-use gpui_kit::{rgb, App};
+use gpui_kit::{hsla, rgb, App};
 
 pub fn apply(cx: &mut App) {
     Theme::change(ThemeMode::Dark, None, cx);
@@ -13,6 +13,7 @@ pub fn apply(cx: &mut App) {
         let foreground = rgb(0xF5F2F2).into();
         let muted = rgb(0xA8A5AE).into();
         theme.background = background;
+        theme.overlay = hsla(0., 0., 0., 0.6);
         theme.foreground = foreground;
         theme.muted_foreground = muted;
         theme.secondary_foreground = muted;

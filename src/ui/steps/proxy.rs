@@ -1,11 +1,13 @@
 //! Step 1: proxy settings view.
 
 use crate::ui::{copy_button, disclosure_chevron};
-use crate::{valid_proxy_fields, App, ProxyTransition};
+use crate::{valid_proxy_fields, App, GuideConsole, ProxyTransition};
 use gpui_kit::base::{Disableable as _, StyledExt as _};
+use gpui_kit::component::WindowExt;
 use gpui_kit::component::{
     button::{Button, ButtonVariants as _},
     collapsible::Collapsible,
+    dialog::{DialogDescription, DialogFooter, DialogHeader, DialogTitle},
     input::Input,
     select::Select,
     ActiveTheme as _, Icon, Sizable as _,
@@ -13,6 +15,57 @@ use gpui_kit::component::{
 use gpui_kit::prelude::FluentBuilder as _;
 use gpui_kit::*;
 use std::net::Ipv4Addr;
+
+const PS5_IMAGES: [&str; 9] = [
+    "guides/ps5/1.webp",
+    "guides/ps5/2.webp",
+    "guides/ps5/3.webp",
+    "guides/ps5/4.webp",
+    "guides/ps5/5.webp",
+    "guides/ps5/6.webp",
+    "guides/ps5/7.webp",
+    "guides/ps5/8.webp",
+    "guides/ps5/9.webp",
+];
+const PS5_CAPTIONS: [&str; 9] = [
+    "app.ps5_guide_one",
+    "app.ps5_guide_two",
+    "app.ps5_guide_three",
+    "app.ps5_guide_four",
+    "app.ps5_guide_five",
+    "app.ps5_guide_six",
+    "app.ps5_guide_seven",
+    "app.ps5_guide_eight",
+    "app.ps5_guide_nine",
+];
+const PS4_IMAGES: [&str; 12] = [
+    "guides/ps4/6.jpg",
+    "guides/ps4/7.jpg",
+    "guides/ps4/8.jpg",
+    "guides/ps4/9.jpg",
+    "guides/ps4/11.jpg",
+    "guides/ps4/10.jpg",
+    "guides/ps4/12.jpg",
+    "guides/ps4/13.jpg",
+    "guides/ps4/14.jpg",
+    "guides/ps4/15.jpg",
+    "guides/ps4/16.jpg",
+    "guides/ps4/17.jpg",
+];
+const PS4_CAPTIONS: [&str; 12] = [
+    "app.ps4_guide_one",
+    "app.ps4_guide_two",
+    "app.ps4_guide_three",
+    "app.ps4_guide_four",
+    "app.ps4_guide_five",
+    "app.ps4_guide_six",
+    "app.ps4_guide_seven",
+    "app.ps4_guide_eight",
+    "app.ps4_guide_nine",
+    "app.ps4_guide_ten",
+    "app.ps4_guide_eleven",
+    "app.ps4_guide_twelve",
+];
 
 impl App {
     pub(crate) fn proxy_view(&self, cx: &mut Context<Self>, narrow: bool) -> AnyElement {
@@ -203,7 +256,7 @@ impl App {
                                             .text_left()
                                             .min_w_0()
                                             .font_semibold()
-                                            .child(address_text),
+                                            .child(address_text.clone()),
                                     )
                                     .child(
                                         copy_button(
@@ -248,7 +301,9 @@ impl App {
                                     .justify_between()
                                     .gap_2()
                                     .when(rtl, |row| row.flex_row_reverse())
-                                    .child(div().text_left().font_semibold().child(shown_port))
+                                    .child(
+                                        div().text_left().font_semibold().child(shown_port.clone()),
+                                    )
                                     .child(
                                         copy_button(
                                             "copy-device-port",
@@ -370,6 +425,40 @@ impl App {
             .child(guide_step(1, "app.device_guide_one"))
             .child(guide_step(2, "app.device_guide_two"))
             .child(guide_step(3, "app.device_guide_three"))
+            .child(
+                Button::new("ps4-guide-toggle")
+                    .outline()
+                    .accessibility_label(language.text("app.ps4_guide"))
+                    .child(
+                        div()
+                            .flex()
+                            .items_center()
+                            .gap_2()
+                            .when(rtl, |row| row.flex_row_reverse())
+                            .child(Icon::new(assets::IconName::MessageCircleQuestionMark))
+                            .child(language.text("app.ps4_guide")),
+                    )
+                    .on_click(cx.listener(|app, _, window, cx| {
+                        app.open_console_guide(window, cx, GuideConsole::Ps4);
+                    })),
+            )
+            .child(
+                Button::new("ps5-guide-toggle")
+                    .outline()
+                    .accessibility_label(language.text("app.ps5_guide"))
+                    .child(
+                        div()
+                            .flex()
+                            .items_center()
+                            .gap_2()
+                            .when(rtl, |row| row.flex_row_reverse())
+                            .child(Icon::new(assets::IconName::MessageCircleQuestionMark))
+                            .child(language.text("app.ps5_guide")),
+                    )
+                    .on_click(cx.listener(|app, _, window, cx| {
+                        app.open_console_guide(window, cx, GuideConsole::Ps5);
+                    })),
+            )
             .child(
                 div()
                     .id("proxy-guide-note-row")
@@ -582,5 +671,147 @@ impl App {
                     .child(advanced),
             )
             .into_any_element()
+    }
+
+    fn open_console_guide(
+        &mut self,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+        console: GuideConsole,
+    ) {
+        self.console_guide = Some((console, 0));
+        cx.notify();
+        let address = self
+            .device_address(cx)
+            .map_or_else(|| "—".to_owned(), |ip| ip.to_string());
+        let port = self
+            .proxy
+            .as_ref()
+            .map(|proxy| proxy.address.port().to_string())
+            .unwrap_or_else(|| self.bind_port.read(cx).value().to_string());
+        let app = cx.entity();
+        window.open_dialog(cx, move |dialog, window, cx| {
+            let state = app.read(cx);
+            let (console, step) = state.console_guide.unwrap_or((console, 0));
+            let (images, captions, title, warning_step) = match console {
+                GuideConsole::Ps4 => (
+                    &PS4_IMAGES[..],
+                    &PS4_CAPTIONS[..],
+                    "app.ps4_setup_guide",
+                    10,
+                ),
+                GuideConsole::Ps5 => (&PS5_IMAGES[..], &PS5_CAPTIONS[..], "app.ps5_setup_guide", 6),
+            };
+            let language = state.language;
+            let narrow = window.viewport_size().width < px(640.);
+            let previous_app = app.clone();
+            let next_app = app.clone();
+            let rtl = language.is_rtl();
+            dialog
+                .overlay(true)
+                .when(rtl, |dialog| dialog.text_right())
+                .close_button(!rtl)
+                .w(px(760.))
+                .title(
+                    DialogHeader::new().child(
+                        div()
+                            .flex()
+                            .items_center()
+                            .justify_between()
+                            .w_full()
+                            .when(rtl, |title| title.flex_row_reverse())
+                            .child(div().id("console-guide-title").test_support().child(
+                                DialogTitle::new().child(format!(
+                                    "{} · {}/{}",
+                                    language.text(title),
+                                    step + 1,
+                                    images.len()
+                                )),
+                            ))
+                            .when(rtl, |title| {
+                                title.child(
+                                    Button::new("console-guide-close")
+                                        .small()
+                                        .ghost()
+                                        .icon(assets::IconName::Close)
+                                        .accessibility_label("Close")
+                                        .on_click(|_, window, cx| window.close_dialog(cx)),
+                                )
+                            }),
+                    ),
+                )
+                .child(
+                    div()
+                        .id("console-guide-description")
+                        .test_support()
+                        .child(DialogDescription::new().child(language.text(captions[step]))),
+                )
+                .when(step == warning_step, |dialog| {
+                    dialog.child(
+                        div()
+                            .flex()
+                            .flex_col()
+                            .gap_1()
+                            .p_3()
+                            .bg(cx.theme().group_box)
+                            .border_1()
+                            .border_color(cx.theme().primary)
+                            .child(language.text("app.ps5_ignore_sample_values"))
+                            .child(format!("{}: {address}", language.text("app.proxy_address")))
+                            .child(format!("{}: {port}", language.text("app.port"))),
+                    )
+                })
+                .child(
+                    img(images[step])
+                        .mt_2()
+                        .object_fit(ObjectFit::Contain)
+                        .id("console-guide-image")
+                        .test_support()
+                        .w_full()
+                        .h(if narrow {
+                            rems(15.)
+                        } else if console == GuideConsole::Ps4 {
+                            rems(22.)
+                        } else {
+                            rems(31.25)
+                        }),
+                )
+                .footer(
+                    DialogFooter::new()
+                        .flex()
+                        .justify_between()
+                        .gap_2()
+                        .when(rtl, |row| row.flex_row_reverse())
+                        .child(
+                            Button::new("console-guide-previous")
+                                .outline()
+                                .label(language.text("app.previous"))
+                                .disabled(step == 0)
+                                .on_click(move |_, _, cx| {
+                                    previous_app.update(cx, |app, cx| {
+                                        app.console_guide = Some((console, step.saturating_sub(1)));
+                                        cx.notify();
+                                    });
+                                }),
+                        )
+                        .child(
+                            Button::new("console-guide-next")
+                                .primary()
+                                .label(language.text("app.next"))
+                                .disabled(step + 1 == images.len())
+                                .on_click(move |_, _, cx| {
+                                    next_app.update(cx, |app, cx| {
+                                        let last_step = match console {
+                                            GuideConsole::Ps4 => PS4_IMAGES.len() - 1,
+                                            GuideConsole::Ps5 => PS5_IMAGES.len() - 1,
+                                        };
+                                        app.console_guide =
+                                            Some((console, (step + 1).min(last_step)));
+                                        cx.notify();
+                                    });
+                                }),
+                        ),
+                )
+        });
     }
 }
