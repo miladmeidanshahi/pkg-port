@@ -76,7 +76,7 @@ jobs:
           artifact="pkgport-$VERSION-$SUFFIX"
           mkdir -p dist
           if [[ "$RUNNER_OS" == "Linux" ]]; then
-            root="dist/pkgport-deb"
+            root="$RUNNER_TEMP/pkgport-deb-root"
             install -Dm755 "$BINARY" "$root/usr/bin/pkgport"
             install -Dm644 assets/pkgport.desktop "$root/usr/share/applications/pkgport.desktop"
             for size in 32 128 256; do
@@ -88,7 +88,7 @@ jobs:
               "$VERSION" "${GITHUB_SHA:0:12}" > "$root/DEBIAN/control"
             dpkg-deb --build --root-owner-group "$root" "dist/$artifact"
           else
-            app="dist/PKGPort.app/Contents"
+            app="$RUNNER_TEMP/PKGPort.app/Contents"
             mkdir -p "$app/MacOS" "$app/Resources"
             cp "$BINARY" "$app/MacOS/pkgport"
             cp assets/icon.icns "$app/Resources/PKGPort.icns"
@@ -98,7 +98,7 @@ jobs:
               '<plist version="1.0"><dict><key>CFBundleExecutable</key><string>pkgport</string><key>CFBundleIconFile</key><string>PKGPort.icns</string><key>CFBundleIdentifier</key><string>com.pkgport.desktop</string><key>CFBundleName</key><string>PKGPort</string><key>CFBundlePackageType</key><string>APPL</string><key>CFBundleShortVersionString</key><string>%s</string><key>CFBundleVersion</key><string>%s</string></dict></plist>' \
               "$VERSION" "$VERSION" > "$app/Info.plist"
             printf 'APPL????' > "$app/PkgInfo"
-            hdiutil create -volname "PKGPort ($ARCH)" -srcfolder dist/PKGPort.app \
+            hdiutil create -volname "PKGPort ($ARCH)" -srcfolder "$RUNNER_TEMP/PKGPort.app" \
               -ov -format UDZO "dist/$artifact"
           fi
       - name: Build Windows setup installer
