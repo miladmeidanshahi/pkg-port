@@ -5272,10 +5272,12 @@ name = "pkgport"
 version = "0.1.1"
 dependencies = [
  "embed-resource",
+ "futures",
  "gpui-kit",
  "if-addrs",
  "image",
  "rust-i18n",
+ "semver",
  "serde",
  "serde_json",
  "url",

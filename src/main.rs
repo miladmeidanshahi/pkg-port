@@ -10,12 +10,14 @@ mod theme;
 #[cfg(target_os = "linux")]
 mod tray;
 mod ui;
+mod updates;
 
 rust_i18n::i18n!("locales", fallback = "en");
 
 use gpui_kit::component as gpui_component;
 use gpui_kit::component::{
     button::{Button, ButtonVariants as _},
+    dialog::{DialogDescription, DialogFooter, DialogHeader, DialogTitle},
     input::InputState,
     link::Link,
     menu::DropdownMenu as _,
@@ -76,6 +78,7 @@ fn main() {
             .expect("Failed to load bundled Inter font");
         gpui_kit::component::set_locale("en");
         theme::apply(cx);
+        let http_client = cx.http_client();
         #[cfg(target_os = "linux")]
         let (tray_stop, tray_events) = tray::start();
         // X11 only; on Wayland the icon comes from the desktop entry.
@@ -96,6 +99,7 @@ fn main() {
                 App::new(
                     window,
                     cx,
+                    http_client.clone(),
                     #[cfg(target_os = "linux")]
                     tray_stop,
                     #[cfg(target_os = "linux")]
@@ -134,6 +138,7 @@ struct App {
     proxy_transition: Option<ProxyTransition>,
     current_step: usize,
     console_guide: Option<(GuideConsole, usize)>,
+    available_update: Option<updates::AvailableUpdate>,
     language: Language,
     persian_fonts_loaded: bool,
     show_game_urls: bool,
@@ -159,6 +164,7 @@ struct App {
     metadata_error: Option<String>,
     cover: Option<Arc<Image>>,
     _poll_task: Task<()>,
+    _update_check_task: Task<()>,
     #[cfg(target_os = "linux")]
     _tray_stop: mpsc::Sender<()>,
     #[cfg(target_os = "linux")]
@@ -321,6 +327,7 @@ impl App {
     fn new(
         window: &mut Window,
         cx: &mut Context<Self>,
+        http_client: Arc<dyn gpui_kit::http_client::HttpClient>,
         #[cfg(target_os = "linux")] tray_stop: mpsc::Sender<()>,
         #[cfg(target_os = "linux")] tray_events: Receiver<()>,
     ) -> Self {
@@ -436,6 +443,14 @@ impl App {
                 break;
             }
         });
+        let update_check_task = cx.spawn(async move |view, cx| {
+            if let Ok(Some(update)) = updates::check_latest(http_client).await {
+                let _ = view.update(cx, |app, cx| {
+                    app.available_update = Some(update);
+                    cx.notify();
+                });
+            }
+        });
         let app = Self {
             bind_ip,
             bind_select,
@@ -457,6 +472,7 @@ impl App {
             proxy_transition: None,
             current_step: 0,
             console_guide: None,
+            available_update: None,
             language,
             persian_fonts_loaded,
             show_game_urls: false,
@@ -482,6 +498,7 @@ impl App {
             metadata_error: None,
             cover: None,
             _poll_task: poll_task,
+            _update_check_task: update_check_task,
             #[cfg(target_os = "linux")]
             _tray_stop: tray_stop,
             #[cfg(target_os = "linux")]
@@ -562,6 +579,15 @@ impl App {
             }],
         };
         self.upload_rate = 12.5;
+        if std::env::var("PKGPORT_DEV_MOCK_UPDATE").as_deref() == Ok("1") {
+            let mut version =
+                semver::Version::parse(env!("CARGO_PKG_VERSION")).expect("valid package version");
+            version.patch += 1;
+            self.available_update = Some(updates::AvailableUpdate {
+                version,
+                download_url: "https://github.com/miladmeidanshahi/pkg-port/releases".into(),
+            });
+        }
     }
 }
 
@@ -1198,6 +1224,105 @@ impl App {
                 )
         });
     }
+
+    fn open_update_dialog(&self, window: &mut Window, cx: &mut Context<Self>) {
+        let Some(update) = &self.available_update else {
+            return;
+        };
+        let version = update.version.to_string();
+        let download_url = update.download_url.clone();
+        let language = self.language;
+        let rtl = language.is_rtl();
+
+        window.open_dialog(cx, move |dialog, _, cx| {
+            let download_url = download_url.clone();
+            dialog
+                .overlay(true)
+                .when(rtl, |dialog| dialog.text_right())
+                .close_button(!rtl)
+                .title(
+                    DialogHeader::new().child(
+                        div()
+                            .flex()
+                            .items_center()
+                            .justify_between()
+                            .w_full()
+                            .when(rtl, |row| row.flex_row_reverse())
+                            .child(DialogTitle::new().child(language.text("app.update_available")))
+                            .when(rtl, |row| {
+                                row.child(
+                                    Button::new("update-dialog-close")
+                                        .small()
+                                        .ghost()
+                                        .icon(assets::IconName::Close)
+                                        .accessibility_label(language.text("app.close"))
+                                        .on_click(|_, window, cx| window.close_dialog(cx)),
+                                )
+                            }),
+                    ),
+                )
+                .child(
+                    div()
+                        .flex()
+                        .items_center()
+                        .gap_4()
+                        .p_4()
+                        .bg(cx.theme().group_box)
+                        .rounded_md()
+                        .when(rtl, |row| row.flex_row_reverse())
+                        .child(
+                            div()
+                                .size_12()
+                                .flex()
+                                .items_center()
+                                .justify_center()
+                                .rounded_full()
+                                .bg(cx.theme().primary.opacity(0.15))
+                                .child(
+                                    Icon::new(assets::IconName::PackageCheck)
+                                        .text_lg()
+                                        .text_color(cx.theme().primary),
+                                ),
+                        )
+                        .child(
+                            div()
+                                .flex()
+                                .flex_col()
+                                .gap_1()
+                                .child(language.text("app.update_available"))
+                                .child(format!("v{version}"))
+                                .child(format!(
+                                    "{}: v{}",
+                                    language.text("app.current_version"),
+                                    env!("CARGO_PKG_VERSION")
+                                )),
+                        ),
+                )
+                .child(
+                    DialogDescription::new().child(language.text("app.update_dialog_description")),
+                )
+                .footer(
+                    DialogFooter::new()
+                        .flex()
+                        .justify_between()
+                        .gap_2()
+                        .when(rtl, |row| row.flex_row_reverse())
+                        .child(
+                            Button::new("update-later")
+                                .outline()
+                                .label(language.text("app.maybe_later"))
+                                .on_click(|_, window, cx| window.close_dialog(cx)),
+                        )
+                        .child(
+                            Button::new("update-download")
+                                .primary()
+                                .icon(assets::IconName::Download)
+                                .label(language.text("app.download_update"))
+                                .on_click(move |_, _, cx| cx.open_url(&download_url)),
+                        ),
+                )
+        });
+    }
 }
 
 impl Render for App {
@@ -1496,6 +1621,33 @@ impl Render for App {
                     .flex_col()
                     .gap_4()
                     .when(rtl, |view| view.text_right())
+                    .when_some(self.available_update.as_ref(), |view, update| {
+                        view.child(
+                            Button::new("update-available")
+                                .outline()
+                                .accessibility_label(format!(
+                                    "{} v{}",
+                                    language.text("app.update_available"),
+                                    update.version
+                                ))
+                                .child(
+                                    div()
+                                        .flex()
+                                        .items_center()
+                                        .gap_2()
+                                        .when(rtl, |row| row.flex_row_reverse())
+                                        .child(Icon::new(assets::IconName::PackageCheck))
+                                        .child(format!(
+                                            "{} · v{}",
+                                            language.text("app.update_available"),
+                                            update.version
+                                        )),
+                                )
+                                .on_click(cx.listener(|app, _, window, cx| {
+                                    app.open_update_dialog(window, cx);
+                                })),
+                        )
+                    })
                     .child(stepper)
                     .when(self.dev_mock, |view| {
                         view.child(
@@ -1568,6 +1720,7 @@ mod tests {
         let (tray_stop, tray_events) = std::sync::mpsc::channel();
         let (window, app) = cx
             .update(|cx| {
+                let http_client = cx.http_client();
                 gpui_kit::open_window(
                     WindowOptions {
                         window_bounds: Some(WindowBounds::Windowed(Bounds {
@@ -1577,11 +1730,12 @@ mod tests {
                         ..Default::default()
                     },
                     cx,
-                    |window, cx| {
+                    move |window, cx| {
                         cx.new(|cx| {
                             App::new(
                                 window,
                                 cx,
+                                http_client,
                                 #[cfg(target_os = "linux")]
                                 tray_stop,
                                 #[cfg(target_os = "linux")]

@@ -108,6 +108,24 @@ app:
   previous:
     en: "Previous"
     fa: "قبلی"
+  update_available:
+    en: "A newer version is available"
+    fa: "نسخهٔ جدیدتری در دسترس است"
+  download_update:
+    en: "Download update"
+    fa: "دریافت به‌روزرسانی"
+  update_dialog_description:
+    en: "Download the installer for your device to get the latest PKGPort features and fixes."
+    fa: "نسخهٔ جدید آمادهٔ دریافت است. برای دریافت قابلیت‌ها و رفع اشکال‌های جدید،نصب‌کنندهٔ مناسب دستگاه خود را دریافت کنید."
+  current_version:
+    en: "Current version"
+    fa: "نسخهٔ فعلی"
+  maybe_later:
+    en: "Maybe later"
+    fa: "بعداً"
+  close:
+    en: "Close"
+    fa: "بستن"
   next:
     en: "Next"
     fa: "بعدی"
