@@ -345,9 +345,6 @@ impl App {
                                         .child(game.device.clone()),
                                 ),
                         )
-                        .when(loading, |view| {
-                            view.child(Skeleton::new().w_32().h_4().rounded_md())
-                        })
                         .when_some(self.metadata_error.as_ref(), |view, error| {
                             view.child(div().text_color(cx.theme().danger).child(error.clone()))
                                 .child(
