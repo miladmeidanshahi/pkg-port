@@ -1311,41 +1311,13 @@ impl App {
                                 .whitespace_normal()
                                 .when(rtl, |description| description.text_right())
                                 .child(
-                                    div()
-                                        .id("update-dialog-description-text")
-                                        .test_support()
-                                        .mt_3()
-                                        .w_full()
-                                        .min_w_0()
-                                        .whitespace_normal()
-                                        .when(rtl, |text| {
-                                            // shortcut: GPUI 0.9.1 clips soft-wrapped RTL glyphs; use flex word wrapping until its text renderer is fixed.
-                                            text.flex().flex_col().children(
-                                                language
-                                                    .text("app.update_dialog_description")
-                                                    .lines()
-                                                    .map(|line| {
-                                                        div()
-                                                            .flex()
-                                                            .flex_row_reverse()
-                                                            .flex_wrap()
-                                                            .gap_x_1()
-                                                            .children(line.split_whitespace().map(
-                                                                |word| {
-                                                                    div()
-                                                                        .flex_shrink_0()
-                                                                        .whitespace_nowrap()
-                                                                        .child(word.to_owned())
-                                                                },
-                                                            ))
-                                                    }),
-                                            )
-                                        })
-                                        .when(!rtl, |text| {
-                                            text.child(
-                                                language.text("app.update_dialog_description"),
-                                            )
-                                        }),
+                                    ui::wrapped_text(
+                                        language.text("app.update_dialog_description"),
+                                        rtl,
+                                    )
+                                    .id("update-dialog-description-text")
+                                    .test_support()
+                                    .mt_3(),
                                 ),
                         ),
                 )
@@ -1974,6 +1946,12 @@ mod tests {
                 window.find("game-guide-title").bounds().left()
                     < window.find("game-guide-icon").bounds().left()
             );
+            let help = window.find("game-guide-help").bounds();
+            assert!(
+                help.size.height > px(20.),
+                "Persian download guide should wrap"
+            );
+            assert!(help.left() >= px(0.) && help.right() <= window.bounds().size.width);
             assert!(
                 window.find(("copy-game-url", 0usize)).bounds().left()
                     < window.find(("package-url-text", 0usize)).bounds().left()
@@ -2002,6 +1980,14 @@ mod tests {
                 window.find("folder-guide-title").bounds().left()
                     < window.find("folder-guide-icon").bounds().left()
             );
+            for id in ["folder-intro", "folder-guide-filenames"] {
+                let text = window.find(id).bounds();
+                assert!(
+                    text.size.height > px(20.),
+                    "Persian folder text should wrap: {id}"
+                );
+                assert!(text.left() >= px(0.) && text.right() <= window.bounds().size.width);
+            }
             let count = window.find("folder-pkg-count");
             assert!(count.visible());
             assert!(count.bounds().size.width > px(0.));
@@ -2129,7 +2115,23 @@ mod tests {
                         cx.notify();
                     });
                 }
+                if step == 1 {
+                    let help = window.find("game-guide-help").bounds();
+                    assert!(
+                        help.size.height > px(20.),
+                        "Persian download guide should wrap"
+                    );
+                    assert!(help.left() >= px(0.) && help.right() <= px(420.));
+                }
                 if step == 2 {
+                    for id in ["folder-intro", "folder-guide-filenames"] {
+                        let text = window.find(id).bounds();
+                        assert!(
+                            text.size.height > px(20.),
+                            "Persian folder text should wrap: {id}"
+                        );
+                        assert!(text.left() >= px(0.) && text.right() <= px(420.));
+                    }
                     let count = window.find("folder-pkg-count");
                     assert!(count.visible());
                     assert!(count.bounds().size.width > px(0.));

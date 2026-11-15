@@ -487,16 +487,13 @@ impl App {
                             ),
                     )
                     .child(
-                        div()
-                            .id("proxy-guide-note-text")
-                            .test_support()
-                            .min_w_0()
-                            .flex_1()
-                            .whitespace_normal()
-                            .child(
-                                language
-                                    .text("app.any_device_on_those_subnets_may_use_the_proxy_wh"),
-                            ),
+                        crate::ui::wrapped_text(
+                            language.text("app.any_device_on_those_subnets_may_use_the_proxy_wh"),
+                            rtl,
+                        )
+                        .id("proxy-guide-note-text")
+                        .test_support()
+                        .flex_1(),
                     ),
             );
         let bind_select = Select::new(&self.bind_select)

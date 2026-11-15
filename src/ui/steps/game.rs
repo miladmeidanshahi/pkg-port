@@ -113,13 +113,11 @@ impl App {
                     ),
             )
             .child(
-                div()
-                    .w_full()
-                    .min_w_0()
-                    .whitespace_normal()
+                crate::ui::wrapped_text(language.text("app.use_local_files_help"), rtl)
+                    .id("game-guide-help")
+                    .test_support()
                     .text_xs()
-                    .text_color(cx.theme().muted_foreground)
-                    .child(language.text("app.use_local_files_help")),
+                    .text_color(cx.theme().muted_foreground),
             );
         div()
             .flex()

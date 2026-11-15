@@ -284,7 +284,7 @@ app:
     fa: "همهٔ بخش‌های لازم بسته را در یک پوشه بگذارید."
   folder_check_two:
     en: "Keep the original filenames so requests can match."
-    fa: "نام اصلی فایل‌ها را نگه دارید.\nتا درخواست‌ها با آن‌ها مطابق شوند."
+    fa: "نام اصلی فایل‌ها را نگه دارید تا درخواست‌ها با آن‌ها مطابق شوند."
   back_to_game:
     en: "Back to Game content"
     fa: "بازگشت به محتوای بازی"
@@ -536,7 +536,7 @@ app:
     fa: "فقط دستگاه‌های زیرشبکهٔ محلی شناسایی‌شده پذیرفته می‌شوند. ترافیک HTTPS بدون رمزگشایی عبور می‌کند."
   any_device_on_those_subnets_may_use_the_proxy_wh:
     en: "Devices on allowed local subnets can use the proxy while it runs."
-    fa: "دستگاه‌های شبکهٔ محلی مجاز\nمی‌توانند از پروکسی استفاده کنند."
+    fa: "دستگاه‌های شبکهٔ محلی مجاز می‌توانند از پروکسی استفاده کنند."
   https_remains_encrypted:
     en: "HTTPS remains end-to-end encrypted."
     fa: "ارتباط HTTPS همچنان از ابتدا تا انتها رمزگذاری‌شده می‌ماند."
@@ -545,7 +545,7 @@ app:
     fa: "بستهٔ شناسایی‌شده از پلی‌استیشن خود را بررسی کنید."
   select_the_folder_containing_complete_pkg_parts:
     en: "Select the folder containing complete .pkg parts. Matching PlayStation HTTP package requests use these local files."
-    fa: "پوشه فایل‌های کامل .pkg را انتخاب کنید.\nدرخواست‌های HTTP پلی‌استیشن با فایل‌های محلی پاسخ داده می‌شوند."
+    fa: "پوشه فایل‌های کامل .pkg را انتخاب کنید. درخواست‌های HTTP پلی‌استیشن با فایل‌های محلی پاسخ داده می‌شوند."
   no_folder_selected:
     en: "No folder selected"
     fa: "پوشه‌ای انتخاب نشده است"

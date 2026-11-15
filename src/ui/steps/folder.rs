@@ -155,9 +155,11 @@ impl App {
                 )
                 .into_any_element()
         } else {
-            div()
-                .child(language.text("app.select_the_folder_containing_complete_pkg_parts"))
-                .into_any_element()
+            crate::ui::wrapped_text(
+                language.text("app.select_the_folder_containing_complete_pkg_parts"),
+                rtl,
+            )
+            .into_any_element()
         };
         let card = div()
             .flex()
@@ -325,16 +327,13 @@ impl App {
             })
             .when(!detail.is_empty(), |view| {
                 view.child(
-                    div()
-                        .w_full()
+                    crate::ui::wrapped_text(detail, rtl && self.package_dir.is_none())
                         .text_color(if error {
                             cx.theme().danger
                         } else {
                             cx.theme().muted_foreground
                         })
-                        .text_xs()
-                        .min_w_0()
-                        .child(detail),
+                        .text_xs(),
                 )
             })
             .child(
@@ -453,13 +452,11 @@ impl App {
                     .child(language.text("app.folder_check_one")),
             )
             .child(
-                div()
-                    .w_full()
-                    .min_w_0()
-                    .whitespace_normal()
+                crate::ui::wrapped_text(language.text("app.folder_check_two"), rtl)
+                    .id("folder-guide-filenames")
+                    .test_support()
                     .text_xs()
-                    .text_color(cx.theme().muted_foreground)
-                    .child(language.text("app.folder_check_two")),
+                    .text_color(cx.theme().muted_foreground),
             );
         div()
             .flex()
@@ -482,15 +479,13 @@ impl App {
                             .child(language.text("app.pkg_folder")),
                     )
                     .child(
-                        div()
-                            .w_full()
-                            .min_w_0()
-                            .whitespace_normal()
-                            .text_color(cx.theme().muted_foreground)
-                            .child(
-                                language
-                                    .text("app.select_the_folder_containing_complete_pkg_parts"),
-                            ),
+                        crate::ui::wrapped_text(
+                            language.text("app.select_the_folder_containing_complete_pkg_parts"),
+                            rtl,
+                        )
+                        .id("folder-intro")
+                        .test_support()
+                        .text_color(cx.theme().muted_foreground),
                     ),
             )
             .child(
