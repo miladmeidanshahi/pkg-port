@@ -284,7 +284,7 @@ fn serve(
                     continue;
                 }
                 active.fetch_add(1, Ordering::Relaxed);
-                let _ = events.try_send(format!("Device connected: {peer}"));
+                log_event(&events, format!("Device connected: {peer}"));
                 let active = active.clone();
                 let sockets = sockets.clone();
                 let events = events.clone();
@@ -303,6 +303,10 @@ fn serve(
                         selected_dir.as_deref(),
                         &transfers,
                     ) {
+                        log_event(
+                            &events,
+                            format!("Request failed: {peer} [{:?}]: {error}", error.kind()),
+                        );
                         let status = if error.kind() == io::ErrorKind::PermissionDenied {
                             403
                         } else {
@@ -356,9 +360,26 @@ fn forbidden(message: &'static str) -> io::Error {
     io::Error::new(io::ErrorKind::PermissionDenied, message)
 }
 
+fn log_event(events: &SyncSender<String>, message: String) {
+    let timestamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs();
+    eprintln!("[proxy {timestamp}] {message}");
+    let _ = events.try_send(message);
+}
+
 fn log_request(events: &SyncSender<String>, peer: SocketAddr, method: &str, target: &str) {
+    let safe_method = if method.bytes().all(|byte| byte.is_ascii_uppercase()) {
+        method
+    } else {
+        "[invalid method]"
+    };
     let target = if method == "CONNECT" {
-        if target.contains('@') || target.contains('%') {
+        if target.contains('@')
+            || target.contains('%')
+            || target.bytes().any(|b| b.is_ascii_control())
+        {
             "[invalid authority]".to_string()
         } else {
             target.to_string()
@@ -374,14 +395,17 @@ fn log_request(events: &SyncSender<String>, peer: SocketAddr, method: &str, targ
     } else {
         "[invalid URL]".to_string()
     };
-    let _ = events.try_send(format!("{peer} {method} {target}"));
+    log_event(events, format!("{peer} {safe_method} {target}"));
 }
 
 fn destination(host: &str, port: u16) -> io::Result<TcpStream> {
     if host.is_empty() || host.contains('@') || host.contains('%') {
         return Err(invalid("Invalid host"));
     }
-    let addresses = (host, port).to_socket_addrs()?;
+    let addresses = (host, port)
+        .to_socket_addrs()
+        .map_err(|error| io::Error::new(error.kind(), format!("DNS lookup failed: {error}")))?;
+    let mut last_error = None;
     for address in addresses {
         let std::net::IpAddr::V4(ip) = address.ip() else {
             continue;
@@ -389,11 +413,20 @@ fn destination(host: &str, port: u16) -> io::Result<TcpStream> {
         if !public_ip(ip) {
             continue;
         }
-        if let Ok(stream) = TcpStream::connect_timeout(&address, Duration::from_secs(5)) {
-            stream.set_read_timeout(Some(TIMEOUT))?;
-            stream.set_write_timeout(Some(TIMEOUT))?;
-            return Ok(stream);
+        match TcpStream::connect_timeout(&address, Duration::from_secs(5)) {
+            Ok(stream) => {
+                stream.set_read_timeout(Some(TIMEOUT))?;
+                stream.set_write_timeout(Some(TIMEOUT))?;
+                return Ok(stream);
+            }
+            Err(error) => last_error = Some(error),
         }
+    }
+    if let Some(error) = last_error {
+        return Err(io::Error::new(
+            error.kind(),
+            format!("Upstream connection failed: {error}"),
+        ));
     }
     Err(forbidden("No reachable public IPv4 destination"))
 }
@@ -412,6 +445,21 @@ fn public_ip(ip: Ipv4Addr) -> bool {
         || a == 192 && b == 0 && c == 2
         || a == 198 && (b == 18 || b == 19 || b == 51 && c == 100)
         || a == 203 && b == 0 && c == 113)
+}
+
+fn connect_host<'a>(authority: &'a str, host_header: &str) -> io::Result<&'a str> {
+    let (host, port) = authority
+        .rsplit_once(':')
+        .ok_or_else(|| invalid("Invalid CONNECT target"))?;
+    if host.is_empty()
+        || !(host_header.eq_ignore_ascii_case(host) || host_header.eq_ignore_ascii_case(authority))
+    {
+        return Err(invalid("Host must match CONNECT authority"));
+    }
+    if port != "443" {
+        return Err(forbidden("Only HTTPS port 443 is allowed"));
+    }
+    Ok(host)
 }
 
 fn handle(
@@ -436,6 +484,7 @@ fn handle(
     if parts.len() != 3 || parts[2] != "HTTP/1.1" {
         return Err(invalid("Unsupported request"));
     }
+    log_request(events, peer, parts[0], parts[1]);
     let mut host_header = None;
     let mut length = None;
     let mut range = None;
@@ -484,17 +533,9 @@ fn handle(
         if length.unwrap_or(0) != 0 {
             return Err(invalid("CONNECT body not supported"));
         }
-        let (host, port) = parts[1]
-            .rsplit_once(':')
-            .ok_or_else(|| invalid("Invalid CONNECT target"))?;
-        if host.is_empty() || host_header != parts[1] {
-            return Err(invalid("Host must match CONNECT authority"));
-        }
-        if port != "443" {
-            return Err(forbidden("Only HTTPS port 443 is allowed"));
-        }
-        log_request(events, peer, "CONNECT", parts[1]);
+        let host = connect_host(parts[1], host_header)?;
         let upstream = destination(host, 443)?;
+        log_event(events, format!("HTTPS upstream connected: {peer}"));
         let mut active = sockets.lock().map_err(|_| invalid("Proxy stopping"))?;
         let streams = active
             .get_mut(&id)
@@ -504,7 +545,6 @@ fn handle(
         client.write_all(b"HTTP/1.1 200 Connection Established\r\n\r\n")?;
         tunnel(client, upstream)
     } else {
-        log_request(events, peer, parts[0], parts[1]);
         if let Some(dir) = package_dir {
             if serve_package(
                 client,
@@ -529,6 +569,7 @@ fn handle(
             host_header,
             &header,
             length.unwrap_or(0),
+            events,
         )
     }
 }
@@ -656,7 +697,7 @@ fn serve_package(
         transfers.end(id, name, false);
         guard.finished = true;
     }
-    let _ = events.try_send(format!("Served local PKG: {name} ({length} bytes)"));
+    log_event(events, format!("Served local PKG: {name} ({length} bytes)"));
     Ok(true)
 }
 
@@ -667,6 +708,7 @@ fn forward_http(
     host_header: &str,
     header: &[u8],
     body_len: u64,
+    events: &SyncSender<String>,
 ) -> io::Result<()> {
     if !matches!(
         method,
@@ -697,7 +739,37 @@ fn forward_http(
         path.push('?');
         path.push_str(query);
     }
-    write!(upstream, "{method} {path} HTTP/1.1\r\n")?;
+    write_forwarded_header(&mut upstream, method, &path, host, header)?;
+    let copied = io::copy(&mut client.take(body_len), &mut upstream)?;
+    if copied != body_len {
+        return Err(invalid("Incomplete request body"));
+    }
+    let mut response = [0; 8192];
+    let count = upstream.read(&mut response)?;
+    let status = response[..count]
+        .split(|byte| *byte == b'\n')
+        .next()
+        .and_then(|line| std::str::from_utf8(line).ok())
+        .and_then(|line| line.split_ascii_whitespace().nth(1))
+        .and_then(|status| status.parse::<u16>().ok());
+    log_event(
+        events,
+        format!("HTTP upstream response: {host} status={status:?}, initial_bytes={count}"),
+    );
+    client.write_all(&response[..count])?;
+    io::copy(&mut upstream, client)?;
+    Ok(())
+}
+
+fn write_forwarded_header(
+    upstream: &mut impl Write,
+    method: &str,
+    path: &str,
+    host: &str,
+    header: &[u8],
+) -> io::Result<()> {
+    let mut forwarded = Vec::with_capacity(header.len());
+    write!(forwarded, "{method} {path} HTTP/1.1\r\n")?;
     let text = std::str::from_utf8(header).map_err(|_| invalid("Invalid header encoding"))?;
     for line in text
         .split("\r\n")
@@ -715,15 +787,11 @@ fn forward_http(
         {
             continue;
         }
-        write!(upstream, "{line}\r\n")?;
+        write!(forwarded, "{line}\r\n")?;
     }
-    write!(upstream, "Host: {host}\r\nConnection: close\r\n\r\n")?;
-    let copied = io::copy(&mut client.take(body_len), &mut upstream)?;
-    if copied != body_len {
-        return Err(invalid("Incomplete request body"));
-    }
-    io::copy(&mut upstream, client)?;
-    Ok(())
+    write!(forwarded, "Host: {host}\r\nConnection: close\r\n\r\n")?;
+    // Avoid tiny header writes that trigger HTTP rejection on some network paths.
+    upstream.write_all(&forwarded)
 }
 
 fn tunnel(client: &mut TcpStream, mut upstream: TcpStream) -> io::Result<()> {
@@ -743,6 +811,60 @@ fn tunnel(client: &mut TcpStream, mut upstream: TcpStream) -> io::Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn connect_accepts_equivalent_https_hosts_only() {
+        for host_header in ["example.org", "example.org:443", "EXAMPLE.ORG:443"] {
+            assert_eq!(
+                connect_host("example.org:443", host_header).unwrap(),
+                "example.org"
+            );
+        }
+        for (authority, host_header) in [
+            ("example.org:443", "other.org:443"),
+            ("example.org:443", "example.org:80"),
+            ("example.org:8443", "example.org"),
+            ("example.org", "example.org"),
+            (":443", ":443"),
+        ] {
+            assert!(connect_host(authority, host_header).is_err());
+        }
+    }
+
+    #[test]
+    fn forwarded_http_header_is_sent_together() {
+        #[derive(Default)]
+        struct RecordingWriter {
+            bytes: Vec<u8>,
+            writes: usize,
+        }
+        impl Write for RecordingWriter {
+            fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
+                self.writes += 1;
+                self.bytes.extend_from_slice(bytes);
+                Ok(bytes.len())
+            }
+
+            fn flush(&mut self) -> io::Result<()> {
+                Ok(())
+            }
+        }
+
+        let mut upstream = RecordingWriter::default();
+        write_forwarded_header(
+            &mut upstream,
+            "POST",
+            "/check?value=1",
+            "example.org",
+            b"POST http://example.org/check?value=1 HTTP/1.1\r\nHost: example.org:80\r\nUser-Agent: console\r\nContent-Length: 4\r\nConnection: keep-alive\r\nProxy-Connection: keep-alive\r\nKeep-Alive: timeout=5\r\n\r\n",
+        )
+        .unwrap();
+        assert_eq!(upstream.writes, 1);
+        assert_eq!(
+            upstream.bytes,
+            b"POST /check?value=1 HTTP/1.1\r\nUser-Agent: console\r\nContent-Length: 4\r\nHost: example.org\r\nConnection: close\r\n\r\n"
+        );
+    }
 
     #[test]
     fn peers_must_match_local_subnet() {
@@ -833,6 +955,22 @@ mod tests {
         assert_eq!(
             received.try_recv().unwrap(),
             format!("{peer} CONNECT [invalid authority]")
+        );
+    }
+
+    #[test]
+    fn request_log_hides_control_characters() {
+        let peer = "192.168.1.42:1234".parse().unwrap();
+        let (events, received) = mpsc::sync_channel(2);
+        log_request(&events, peer, "CONNECT", "example.org:443\x1b");
+        log_request(&events, peer, "GET\x1b", "http://example.org/?token=secret");
+        assert_eq!(
+            received.try_recv().unwrap(),
+            format!("{peer} CONNECT [invalid authority]")
+        );
+        assert_eq!(
+            received.try_recv().unwrap(),
+            format!("{peer} [invalid method] http://example.org/")
         );
     }
 
