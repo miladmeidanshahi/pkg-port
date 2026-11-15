@@ -17,13 +17,22 @@ fn scan_parts(
 ) {
     for index in 0..MAX_PARTS {
         let candidate = format!("{prefix}_{index}.pkg");
-        match status_for(&candidate) {
+        let mut status = status_for(&candidate);
+        // The CDN can transiently deny probes for parts that do exist.
+        for _ in 0..2 {
+            if !matches!(status, Ok(403)) {
+                break;
+            }
+            status = status_for(&candidate);
+        }
+        match status {
             Ok(200 | 206) => {
                 if !send(DiscoveryEvent::Found(candidate)) {
                     return;
                 }
             }
-            Ok(404 | 410) if index > 0 => {
+            // shortcut: a persistent CDN 403 may also mean access denied; use a manifest if exact totals are required.
+            Ok(403 | 404 | 410) if index > 0 => {
                 send(DiscoveryEvent::Complete(index));
                 return;
             }
@@ -141,5 +150,69 @@ mod tests {
         );
         assert_eq!(events.len(), 1);
         assert!(matches!(events[0], DiscoveryEvent::Incomplete(_)));
+    }
+
+    #[test]
+    fn scan_recovers_from_transient_access_denial() {
+        let mut events = Vec::new();
+        let mut denied = false;
+        scan_parts(
+            "http://example.com/game",
+            |url| {
+                let index = part_index(url).unwrap();
+                Ok(if index == 12 && !denied {
+                    denied = true;
+                    403
+                } else if index == 13 {
+                    404
+                } else {
+                    200
+                })
+            },
+            |event| {
+                events.push(event);
+                true
+            },
+        );
+        assert!(denied);
+        assert_eq!(events.len(), 14);
+        assert!(matches!(events.last(), Some(DiscoveryEvent::Complete(13))));
+    }
+
+    #[test]
+    fn scan_stops_on_unavailable_parts_but_not_server_failures() {
+        for status in [403, 404, 410, 429, 500] {
+            let mut events = Vec::new();
+            let mut probes = 0;
+            scan_parts(
+                "http://example.com/game",
+                |url| {
+                    Ok(if part_index(url) == Some(13) {
+                        probes += 1;
+                        status
+                    } else {
+                        200
+                    })
+                },
+                |event| {
+                    events.push(event);
+                    true
+                },
+            );
+            assert_eq!(probes, if status == 403 { 3 } else { 1 });
+            assert_eq!(events.len(), 14);
+            assert!(events[..13]
+                .iter()
+                .all(|event| matches!(event, DiscoveryEvent::Found(_))));
+            if matches!(status, 403 | 404 | 410) {
+                assert!(matches!(events.last(), Some(DiscoveryEvent::Complete(13))));
+            } else {
+                assert!(matches!(
+                    events.last(),
+                    Some(DiscoveryEvent::Incomplete(message))
+                        if message.contains(&format!("HTTP {status}"))
+                ));
+            }
+        }
     }
 }
