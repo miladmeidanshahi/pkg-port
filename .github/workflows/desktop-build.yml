@@ -189,6 +189,29 @@ jobs:
           merge-multiple: true
       - name: Generate SHA-256 checksums
         run: cd dist && sha256sum pkgport-* > SHA256SUMS.txt
+      - name: Read download sizes
+        id: download_sizes
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          python3 <<'PY'
+          import os
+          from pathlib import Path
+
+          suffixes = {
+              "windows": "windows-x86_64-setup.exe",
+              "linux": "linux-x86_64.deb",
+              "macos_arm": "macos-aarch64.dmg",
+              "macos_intel": "macos-x86_64.dmg",
+          }
+          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+              for platform, suffix in suffixes.items():
+                  package = Path("dist") / f"pkgport-{os.environ['VERSION']}-{suffix}"
+                  size = package.stat().st_size
+                  if size == 0:
+                      raise ValueError(f"Empty release package: {package}")
+                  output.write(f"{platform}={size / 1024**2:.1f} MiB\n")
+          PY
       - name: Create release
         uses: softprops/action-gh-release@v3
         with:
@@ -204,12 +227,12 @@ jobs:
 
             Choose the file for your system. / فایل مناسب سیستم‌عامل خود را انتخاب کنید.
 
-            | Platform / سیستم‌عامل | Download |
-            | --- | --- |
-            | Windows x86_64 | [Setup `.exe`](https://github.com/${{ github.repository }}/releases/download/build-${{ github.sha }}/pkgport-${{ needs.build.outputs.version }}-windows-x86_64-setup.exe) |
-            | Linux x86_64 | [`.deb`](https://github.com/${{ github.repository }}/releases/download/build-${{ github.sha }}/pkgport-${{ needs.build.outputs.version }}-linux-x86_64.deb) |
-            | macOS Apple Silicon | [`.dmg`](https://github.com/${{ github.repository }}/releases/download/build-${{ github.sha }}/pkgport-${{ needs.build.outputs.version }}-macos-aarch64.dmg) |
-            | macOS Intel | [`.dmg`](https://github.com/${{ github.repository }}/releases/download/build-${{ github.sha }}/pkgport-${{ needs.build.outputs.version }}-macos-x86_64.dmg) |
+            | Platform / سیستم‌عامل | Download | Size / حجم |
+            | --- | --- | --- |
+            | Windows x86_64 | [Setup `.exe`](https://github.com/${{ github.repository }}/releases/download/build-${{ github.sha }}/pkgport-${{ needs.build.outputs.version }}-windows-x86_64-setup.exe) | ${{ steps.download_sizes.outputs.windows }} |
+            | Linux x86_64 | [`.deb`](https://github.com/${{ github.repository }}/releases/download/build-${{ github.sha }}/pkgport-${{ needs.build.outputs.version }}-linux-x86_64.deb) | ${{ steps.download_sizes.outputs.linux }} |
+            | macOS Apple Silicon | [`.dmg`](https://github.com/${{ github.repository }}/releases/download/build-${{ github.sha }}/pkgport-${{ needs.build.outputs.version }}-macos-aarch64.dmg) | ${{ steps.download_sizes.outputs.macos_arm }} |
+            | macOS Intel | [`.dmg`](https://github.com/${{ github.repository }}/releases/download/build-${{ github.sha }}/pkgport-${{ needs.build.outputs.version }}-macos-x86_64.dmg) | ${{ steps.download_sizes.outputs.macos_intel }} |
 
             [SHA256SUMS.txt](https://github.com/${{ github.repository }}/releases/download/build-${{ github.sha }}/SHA256SUMS.txt) contains checksums for the downloads.
           files: dist/*
