@@ -504,7 +504,9 @@ impl App {
                         ),
                 )
                 .child(if self.part_discovery.is_some() {
-                    self.language.text("app.finding_package_parts")
+                    self.language
+                        .text("app.finding_package_parts")
+                        .replace("%{count}", &listed_urls.len().to_string())
                 } else if let Some(Ok(count)) = self.part_discovery_result.as_ref() {
                     format!("{}: {count}", self.language.text("app.total_parts"))
                 } else if let Some(Err(error)) = self.part_discovery_result.as_ref() {

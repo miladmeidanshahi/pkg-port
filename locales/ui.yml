@@ -403,11 +403,11 @@ app:
     en: "Package part URLs"
     fa: "نشانی‌های بخش‌های بسته"
   finding_package_parts:
-    en: "Checking numbered package parts…"
-    fa: "بخش‌های شماره‌دار بسته در حال بررسی‌اند…"
+    en: "%{count} parts found"
+    fa: "%{count} فایل پیدا شد"
   total_parts:
-    en: "Verified contiguous parts"
-    fa: "بخش‌های پی‌درپی تأییدشده"
+    en: "Parts found"
+    fa: "فایل های پیدا شده"
   part_search_incomplete:
     en: "Part search incomplete"
     fa: "جست‌وجوی بخش‌ها کامل نشد"
