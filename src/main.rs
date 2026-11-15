@@ -510,7 +510,7 @@ impl App {
         let mut app = app;
         #[cfg(debug_assertions)]
         if std::env::var("PKGPORT_DEV_MOCK")
-            .or_else(|_| std::env::var("PS_DOWNLOWDER_DEV_MOCK"))
+            .or_else(|_| std::env::var("PKGPORT_DEV_MOCK"))
             .as_deref()
             == Ok("1")
         {
