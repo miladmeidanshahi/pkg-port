@@ -31,9 +31,11 @@ Each successful push publishes a prerelease with all four builds. Pick the newes
 | macOS Apple Silicon | `pkgport-<version>-macos-aarch64.dmg` |
 | macOS Intel | `pkgport-<version>-macos-x86_64.dmg` |
 
+On macOS, open the DMG and drag PKGPort to Applications. Packages use ad-hoc signing for integrity; they are not Developer ID signed or notarized. macOS may still block the app. Verify the download against `SHA256SUMS.txt` on the same release, then follow [Apple's instructions for opening an app you trust](https://support.apple.com/102445). A new DMG is required to receive packaging fixes; copying an older download again will not update it.
+
 Each release also includes `SHA256SUMS.txt` to check downloaded files.
 
-All builds are currently unsigned.
+Windows builds are currently unsigned.
 
 ## Description
 

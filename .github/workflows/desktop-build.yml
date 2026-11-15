@@ -98,6 +98,9 @@ jobs:
               '<plist version="1.0"><dict><key>CFBundleExecutable</key><string>pkgport</string><key>CFBundleIconFile</key><string>PKGPort.icns</string><key>CFBundleIdentifier</key><string>com.pkgport.desktop</string><key>CFBundleName</key><string>PKGPort</string><key>CFBundlePackageType</key><string>APPL</string><key>CFBundleShortVersionString</key><string>%s</string><key>CFBundleVersion</key><string>%s</string></dict></plist>' \
               "$VERSION" "$VERSION" > "$app/Info.plist"
             printf 'APPL????' > "$app/PkgInfo"
+            # Ad-hoc signing seals the assembled bundle; it does not provide Developer ID trust.
+            codesign --force --sign - "$RUNNER_TEMP/PKGPort.app"
+            codesign --verify --deep --strict --verbose=2 "$RUNNER_TEMP/PKGPort.app"
             hdiutil create -volname "PKGPort ($ARCH)" -srcfolder "$RUNNER_TEMP/PKGPort.app" \
               -ov -format UDZO "dist/$artifact"
           fi
@@ -134,6 +137,7 @@ jobs:
             mkdir -p "$mount"
             trap 'hdiutil detach "$mount" >/dev/null 2>&1 || true' EXIT
             hdiutil attach -readonly -nobrowse -mountpoint "$mount" "$file"
+            codesign --verify --deep --strict --verbose=2 "$mount/PKGPort.app"
             test -x "$mount/PKGPort.app/Contents/MacOS/pkgport"
             test -f "$mount/PKGPort.app/Contents/Resources/PKGPort.icns"
             /usr/libexec/PlistBuddy -c 'Print :CFBundleIconFile' \
