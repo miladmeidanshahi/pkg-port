@@ -31,11 +31,29 @@ Each successful push publishes a prerelease with all four builds. Pick the newes
 | macOS Apple Silicon | `pkgport-<version>-macos-aarch64.dmg` |
 | macOS Intel | `pkgport-<version>-macos-x86_64.dmg` |
 
-On macOS, open the DMG and drag PKGPort to Applications. Packages use ad-hoc signing for integrity; they are not Developer ID signed or notarized. macOS may still block the app. Verify the download against `SHA256SUMS.txt` on the same release, then follow [Apple's instructions for opening an app you trust](https://support.apple.com/102445). A new DMG is required to receive packaging fixes; copying an older download again will not update it.
+On macOS, open the DMG and drag PKGPort to Applications. See the opening instructions below if macOS blocks the app.
 
 Each release also includes `SHA256SUMS.txt` to check downloaded files.
 
 Windows builds are currently unsigned.
+
+## Opening PKGPort on macOS
+
+You do not need an Apple Developer account to run PKGPort locally. The macOS app uses ad-hoc signing and is not Developer ID signed or notarized.
+
+1. Download the DMG for your Mac: `aarch64` for Apple Silicon, or `x86_64` for Intel. Compare its SHA-256 checksum with `SHA256SUMS.txt` from the same release.
+2. Open the DMG, drag PKGPort to **Applications**, then try opening it from that folder.
+3. If macOS blocks it, open **System Settings → Privacy & Security → Open Anyway**, then confirm **Open**. See [Apple's instructions](https://support.apple.com/102445).
+
+If the verified app still reports that it is “damaged,” open **Terminal** and run the following. Use this only for a build you compiled yourself or a verified download from this repository:
+
+```sh
+codesign --force --sign - "/Applications/PKGPort.app" &&
+xattr -dr com.apple.quarantine "/Applications/PKGPort.app" &&
+open "/Applications/PKGPort.app"
+```
+
+These commands sign your local copy, remove the quarantine flag only from PKGPort, and open it. The `&&` operators stop the sequence if a command fails. They do not disable Gatekeeper globally or provide Apple notarization. If a command fails or the app still will not open, keep the error output for troubleshooting. A newly built DMG is needed to receive packaging fixes; copying an older download again will not update it.
 
 ## Description
 
