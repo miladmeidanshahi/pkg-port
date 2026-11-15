@@ -232,11 +232,11 @@ app:
     en: "Continue to PKG folder"
     fa: "ادامه به پوشهٔ PKG"
   use_local_files:
-    en: "Use local files"
-    fa: "استفاده از فایل‌های محلی"
+    en: "Download the PKG files first"
+    fa: "ابتدا فایل‌های PKG را دانلود کنید"
   use_local_files_help:
-    en: "If you have complete .pkg parts, choose their folder in the next step. Matching requests use these local files."
-    fa: "اگر همهٔ بخش‌های .pkg را دارید،\nپوشه‌شان را در گام بعد انتخاب کنید.\nپروکسی از فایل‌های محلی استفاده می‌کند."
+    en: "Copy the game URLs and download every .pkg part yourself on your computer using a downloader app. Once all downloads finish, continue to PKG folder and select the folder containing the files."
+    fa: "آدرس فایل های بازی را کپی کنید. همهٔ بخش‌های PKG را با یک برنامهٔ دانلود، روی رایانهٔ خود دانلود کنید. پس از پایان دانلود همهٔ فایل‌ها، به گام «پوشهٔ PKG» بروید و پوشهٔ فایل‌ها را انتخاب کنید."
   local_package_folder:
     en: "Local package folder"
     fa: "پوشهٔ محلی بسته"
