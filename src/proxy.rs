@@ -813,6 +813,84 @@ mod tests {
     use super::*;
 
     #[test]
+    fn local_package_requests_serve_full_ranges_and_head_without_upstream() {
+        let folder = std::env::temp_dir().join(format!(
+            "pkgport-offline-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        fs::create_dir(&folder).unwrap();
+        fs::write(folder.join("game_0.pkg"), b"0123456789").unwrap();
+        let transfers = Transfers::default();
+        let (events, received) = mpsc::sync_channel(8);
+        for (method, range, status, expected_body) in [
+            ("GET", "", "200 OK", &b"0123456789"[..]),
+            (
+                "GET",
+                "Range: bytes=4-7\r\n",
+                "206 Partial Content",
+                &b"4567"[..],
+            ),
+            ("HEAD", "", "200 OK", &b""[..]),
+        ] {
+            let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+            let mut client = TcpStream::connect(listener.local_addr().unwrap()).unwrap();
+            client
+                .set_read_timeout(Some(Duration::from_secs(2)))
+                .unwrap();
+            write!(
+                client,
+                "{method} http://gst.prod.dl.playstation.net/game_0.pkg HTTP/1.1\r\nHost: gst.prod.dl.playstation.net\r\n{range}\r\n"
+            )
+            .unwrap();
+            let (mut accepted, peer) = listener.accept().unwrap();
+            accepted
+                .set_read_timeout(Some(Duration::from_secs(2)))
+                .unwrap();
+            handle(
+                &mut accepted,
+                &Mutex::new(HashMap::new()),
+                0,
+                peer,
+                &events,
+                Some(&folder),
+                &transfers,
+            )
+            .unwrap();
+            drop(accepted);
+            let mut response = Vec::new();
+            client.read_to_end(&mut response).unwrap();
+            let header_end = response
+                .windows(4)
+                .position(|bytes| bytes == b"\r\n\r\n")
+                .unwrap()
+                + 4;
+            let header = std::str::from_utf8(&response[..header_end]).unwrap();
+            assert!(header.starts_with(&format!("HTTP/1.1 {status}\r\n")));
+            assert_eq!(&response[header_end..], expected_body);
+            if range.is_empty() {
+                assert!(header.contains("Content-Length: 10\r\n"));
+            } else {
+                assert!(header.contains("Content-Length: 4\r\n"));
+                assert!(header.contains("Content-Range: bytes 4-7/10\r\n"));
+            }
+        }
+        assert_eq!(transfers.snapshot().bytes, 14);
+        assert!(transfers.snapshot().active.is_empty());
+        assert_eq!(
+            received
+                .try_iter()
+                .filter(|line| line.starts_with("Served local PKG:"))
+                .count(),
+            3
+        );
+        fs::remove_dir_all(folder).unwrap();
+    }
+
+    #[test]
     fn connect_accepts_equivalent_https_hosts_only() {
         for host_header in ["example.org", "example.org:443", "EXAMPLE.ORG:443"] {
             assert_eq!(
